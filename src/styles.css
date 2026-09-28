@@ -34,3 +34,5 @@
 .useractions{display:flex;justify-content:flex-end;gap:2px}
 .usernote{max-width:1000px}
 @media(max-width:800px){.userrow{grid-template-columns:38px 1fr auto}.userrow select{grid-column:2}.userrow>.badge{grid-column:3;grid-row:1}.useractions{grid-column:3;grid-row:2}}
+
+.authscreen{min-height:100vh;display:grid;place-items:center;background:#f4f7fb;padding:24px}.authcard{width:min(420px,100%);background:#fff;border:1px solid #e4e9f0;border-radius:18px;padding:32px;box-shadow:0 18px 50px rgba(20,35,60,.08)}.authbrand{display:flex;gap:12px;align-items:center;margin-bottom:26px}.authbrand>b{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:#12304a;color:#fff}.authbrand small{display:block;color:#718096}.autherror{padding:10px 12px;border-radius:9px;background:#fff1f1;color:#a33;margin-bottom:14px}.authcard .form{display:grid;gap:14px}.authcard .newbtn{width:100%;justify-content:center}
