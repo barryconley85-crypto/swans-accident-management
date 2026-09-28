@@ -13,3 +13,12 @@
 .evidence>div:first-child{display:flex;flex-direction:column;gap:3px;min-width:0}
 .evidence small{color:#777}
 @media(max-width:800px){.headactions{width:100%}.headactions select{flex:1}.uploadactions{flex-wrap:wrap}.evidence{align-items:flex-start}}
+
+.headactions{display:flex;align-items:center;gap:7px;padding:4px;background:#f5f8f6;border:1px solid #e1e9e5;border-radius:12px}
+.headactions .secondary,.headactions .danger{height:34px;min-height:34px;padding:0 12px;border-radius:8px;font-size:10px;font-weight:800;line-height:1;box-shadow:none}
+.headactions .secondary{background:#fff;border:1px solid #dce6e1;color:#52635b}
+.headactions .secondary:hover{background:#f8fbf9;border-color:#cbdad3}
+.headactions .danger{background:#fff;border:1px solid #ead4d4;color:#a04444}
+.headactions .danger:hover{background:#fff5f5;border-color:#ddbcbc}
+.headactions select{height:34px;min-height:34px;min-width:138px;padding:0 32px 0 11px;border:1px solid #d7e3dd;border-radius:8px;background:#fff;color:#42534b;font-size:10px;font-weight:800;outline:none;cursor:pointer}
+.headactions select:focus{border-color:#8bb7a8;box-shadow:0 0 0 2px #dceee7}
