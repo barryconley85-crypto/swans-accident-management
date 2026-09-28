@@ -22,3 +22,15 @@
 .headactions .danger:hover{background:#fff5f5;border-color:#ddbcbc}
 .headactions select{height:34px;min-height:34px;min-width:138px;padding:0 32px 0 11px;border:1px solid #d7e3dd;border-radius:8px;background:#fff;color:#42534b;font-size:10px;font-weight:800;outline:none;cursor:pointer}
 .headactions select:focus{border-color:#8bb7a8;box-shadow:0 0 0 2px #dceee7}
+
+.userform{max-width:1000px}
+.usertable{margin-top:8px}
+.userrow{display:grid;grid-template-columns:38px minmax(180px,1fr) 150px 105px 75px;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #edf1ef}
+.useravatar{width:34px;height:34px;border-radius:10px;background:#e5f0ec;color:#23665b;display:grid;place-items:center;font-size:9px;font-weight:800}
+.useridentity b,.useridentity small{display:block}
+.useridentity b{font-size:10px}
+.useridentity small{font-size:8px;color:#85918b;margin-top:3px}
+.userrow select{height:32px;border:1px solid #dfe8e3;border-radius:8px;padding:0 8px;font-size:9px;color:#42534b;background:#fff;outline:0}
+.useractions{display:flex;justify-content:flex-end;gap:2px}
+.usernote{max-width:1000px}
+@media(max-width:800px){.userrow{grid-template-columns:38px 1fr auto}.userrow select{grid-column:2}.userrow>.badge{grid-column:3;grid-row:1}.useractions{grid-column:3;grid-row:2}}
