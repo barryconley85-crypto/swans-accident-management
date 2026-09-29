@@ -1,0 +1,11 @@
+{
+  "name":"Swans Accident Management",
+  "short_name":"Swans Accidents",
+  "start_url":"/",
+  "scope":"/",
+  "display":"standalone",
+  "background_color":"#fcfcfa",
+  "theme_color":"#155b57",
+  "description":"Swans Travel accident reporting and management.",
+  "icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
