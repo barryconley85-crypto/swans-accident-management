@@ -49,3 +49,19 @@
 
 .report-detail-link{display:inline-flex;margin-top:9px;text-decoration:none}.report-register{overflow:hidden}.report-register .tablewrap{margin-top:4px}.report-register table{min-width:1050px}
 @media print{.side,.topbar,.report-filters button,.report-detail-link{display:none!important}.main{margin:0!important}.content{padding:0!important}.card{break-inside:avoid;box-shadow:none}}
+
+/* Reporting colour accents */
+.content:has(.report-filters) .metric{position:relative;overflow:hidden}
+.content:has(.report-filters) .metric:nth-child(1)>span{background:#e7f0fb;color:#3569a8}
+.content:has(.report-filters) .metric:nth-child(2)>span{background:#fff0e8;color:#b56535}
+.content:has(.report-filters) .metric:nth-child(3)>span{background:#eee9fb;color:#7254a8}
+.content:has(.report-filters) .metric:nth-child(4)>span{background:#e6f4ed;color:#3d8664}
+.content:has(.report-filters) .metric:nth-child(5)>span{background:#fff5dc;color:#9a7627}
+.content:has(.report-filters) .metric:nth-child(6)>span{background:#e8f3f5;color:#3d7883}
+.content:has(.report-filters) .two .card:nth-child(1){border-top:3px solid #5b86b8}
+.content:has(.report-filters) .two .card:nth-child(2){border-top:3px solid #7d6ab0}
+.content:has(.report-filters)> .card{border-top:3px solid #4d8a73}
+.content:has(.report-filters) .card h3 svg{color:#4d7f70}
+.content:has(.report-filters) .report-alert{background:#fff7ed;border-color:#f0d7b8;color:#76583e}
+.content:has(.report-filters) .bar i{background:#eef2f4}
+.content:has(.report-filters) .bar i b{background:#527fa6}
