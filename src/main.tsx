@@ -91,4 +91,10 @@ function driversFromCases(all:Case[],filtered:Case[]){const names=[...new Set(al
 
 function Table({heads,rows}:{heads:string[];rows:any[][]}){return <div className="tablewrap"><table><thead><tr>{heads.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i}>{r.map((x,j)=><td key={j}>{x}</td>)}</tr>)}</tbody></table></div>}
 function D({label,v,i:Icon}:{label:string;v:string;i:any}){return <div className="detail"><Icon size={15}/><small>{label}</small><b>{v}</b></div>}function Info({a,b}:{a:string;b:string}){return <div className="info"><span>{a}</span><b>{b}</b></div>}
-createRoot(document.getElementById('root')!).render(<React.StrictMode><AuthGate/></React.StrictMode>);
+class AppErrorBoundary extends React.Component<any,{error:string|null;stack:string}>{
+ state={error:null as string|null,stack:''};
+ static getDerivedStateFromError(error:Error){return {error:error?.message||'Unknown rendering error',stack:error?.stack||''}}
+ componentDidCatch(error:Error,info:React.ErrorInfo){console.error('Accident Management startup failure',error,info)}
+ render(){if(this.state.error)return <div className="authscreen"><div className="authcard"><h2>Accident Management could not start</h2><p>{this.state.error}</p><pre style={{whiteSpace:'pre-wrap',fontSize:11,overflowWrap:'anywhere'}}>{this.state.stack}</pre><button className="newbtn" onClick={()=>window.location.reload()}>Reload app</button></div></div>;return this.props.children}
+}
+createRoot(document.getElementById('root')!).render(<React.StrictMode><AppErrorBoundary><AuthGate/></AppErrorBoundary></React.StrictMode>);
