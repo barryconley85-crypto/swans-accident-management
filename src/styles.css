@@ -137,3 +137,8 @@ a.row:hover{background:#f4faf7;padding-left:8px;padding-right:8px;border-radius:
 .badge.completed{background:#d8f3df!important;color:#155e35!important;border-color:#a8dfb6!important}
 .taskrow .tasktype{background:#e9efff;color:#385c9a}
 @media(max-width:750px){.tasklist .badge,.globaltask .badge,.taskrow .badge{min-width:78px;padding:6px 9px}}
+
+/* Distinct task statuses: active work = orange, waiting = blue, done = green */
+.badge.in-progress{background:#ffead5!important;color:#9a4308!important;border-color:#f4bf8a!important}
+.badge.pending{background:#dcecff!important;color:#1e4f91!important;border-color:#a9cbf5!important}
+.badge.completed{background:#d8f3df!important;color:#155e35!important;border-color:#a8dfb6!important}
