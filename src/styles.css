@@ -129,3 +129,11 @@ a.row:hover{background:#f4faf7;padding-left:8px;padding-right:8px;border-radius:
 .taskrow.done{background:#f0f8f2;border-radius:10px;padding-left:8px;padding-right:8px}
 .useravatar,.profile-avatar{box-shadow:0 3px 8px #173b2b14}
 @media(max-width:750px){.metric-urgent .metric,.metric-aged .metric{padding:0}.dashboard-urgent,.dashboard-outstanding{border-top-width:2px}}
+
+/* Stronger task-state badges for quick scanning */
+.tasklist .badge,.globaltask .badge,.taskrow .badge{font-size:9px;font-weight:800;letter-spacing:.01em;padding:6px 11px;border:1px solid transparent;min-width:82px;text-align:center;box-shadow:0 1px 2px rgba(30,45,35,.05)}
+.badge.in-progress{background:#ffdfa0!important;color:#754300!important;border-color:#edbd61!important}
+.badge.pending{background:#fff0c9!important;color:#785100!important;border-color:#f0d58a!important}
+.badge.completed{background:#d8f3df!important;color:#155e35!important;border-color:#a8dfb6!important}
+.taskrow .tasktype{background:#e9efff;color:#385c9a}
+@media(max-width:750px){.tasklist .badge,.globaltask .badge,.taskrow .badge{min-width:78px;padding:6px 9px}}
