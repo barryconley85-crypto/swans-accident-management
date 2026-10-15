@@ -12,18 +12,24 @@ function adminApp() {
 function csvEmails(value) {
   return (value || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
 }
-async function sendEmail(to, subject, text) {
-  if (!process.env.RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
-  if (!process.env.TASK_EMAIL_FROM) throw new Error("TASK_EMAIL_FROM is not configured");
+async function sendEmail(to, subject, text, eventKey) {
+  const url = process.env.GOOGLE_MAILER_URL;
+  const secret = process.env.GOOGLE_MAILER_SHARED_SECRET;
+  if (!url) throw new Error("GOOGLE_MAILER_URL is not configured");
+  if (!secret) throw new Error("GOOGLE_MAILER_SHARED_SECRET is not configured");
   if (!to || !to.length) throw new Error("No notification recipients are configured");
-  const response = await fetch("https://api.resend.com/emails", {
+  const response = await fetch(url, {
     method: "POST",
-    headers: { Authorization: "Bearer " + process.env.RESEND_API_KEY, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: process.env.TASK_EMAIL_FROM, to: to, subject: subject, text: text })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ secret: secret, to: to, subject: subject, text: text, eventKey: eventKey })
   });
-  const body = await response.json().catch(function () { return {}; });
-  if (!response.ok) throw new Error("Resend rejected email (" + response.status + "): " + JSON.stringify(body));
-  return body.id || "accepted";
+  const raw = await response.text();
+  let body = {};
+  try { body = JSON.parse(raw); } catch (_) {}
+  if (!response.ok || !body.ok) {
+    throw new Error("Google mailer rejected email (" + response.status + "): " + String(body.error || raw || "Unknown response").slice(0, 500));
+  }
+  return body.id || (body.duplicate ? "duplicate" : "accepted");
 }
 async function logAttempt(db, eventKey, details) {
   await db.collection("notificationEvents").doc(eventKey).set({
@@ -79,7 +85,7 @@ async function notifyEvent(req, res, db) {
   }
   try {
     await logAttempt(db, eventKey, { type: eventType, caseId: caseId, actor: actor.uid, recipients: to, status: "attempted" });
-    const providerId = await sendEmail(to, subject, message);
+    const providerId = await sendEmail(to, subject, message, eventKey);
     await eventRef.set({ type: eventType, caseId: caseId, actor: actor.uid, recipients: to, subject: subject, status: "sent", providerId: providerId, sentAt: FieldValue.serverTimestamp() }, { merge: true });
     return res.status(200).json({ ok: true, sent: true });
   } catch (error) {
@@ -118,7 +124,7 @@ async function checkDeadlines(res, db) {
       const message = "An accident management task needs attention.\n\nAccident: " + (accident.ref || docSnap.id) + "\nTask: " + (task.title || task.type || "Task") + "\nAssigned to: " + (assignee || "Unassigned") + "\nDue: " + (task.dueAt || "72 hours after task creation") + "\nStatus: " + (task.status || "Pending");
       try {
         await logAttempt(db, eventKey, { type: kind, caseId: docSnap.id, taskId: task.id, recipients: recipients, status: "attempted" });
-        const providerId = await sendEmail(recipients, subject, message);
+        const providerId = await sendEmail(recipients, subject, message, eventKey);
         await eventRef.set({ type: kind, caseId: docSnap.id, taskId: task.id, recipients: recipients, subject: subject, status: "sent", providerId: providerId, sentAt: FieldValue.serverTimestamp() }, { merge: true });
         sent++;
       } catch (error) {
