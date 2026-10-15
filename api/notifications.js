@@ -12,6 +12,32 @@ function adminApp() {
 function csvEmails(value) {
   return (value || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
 }
+function escapeHtml(value) {
+  return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+    return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+  });
+}
+function brandedHtml(subject, text) {
+  const lines = String(text || "").split("\\n");
+  const details = [];
+  const intro = [];
+  for (const line of lines) {
+    const match = line.match(/^([^:]{2,45}):\\s*(.*)$/);
+    if (match) details.push('<tr><td style="padding:9px 12px;color:#64748b;font-size:12px;border-bottom:1px solid #e8eef0;width:34%;vertical-align:top;">' + escapeHtml(match[1]) + '</td><td style="padding:9px 12px;color:#163b35;font-size:13px;font-weight:600;border-bottom:1px solid #e8eef0;vertical-align:top;">' + escapeHtml(match[2] || "—") + '</td></tr>');
+    else if (line.trim()) intro.push(escapeHtml(line));
+  }
+  const heading = escapeHtml(subject.replace(/^\\[[^\\]]+\\]\\s*/, ""));
+  const content = (intro.length ? '<p style="margin:0 0 18px;color:#425b56;font-size:14px;line-height:1.7;">' + intro.join("<br>") + '</p>' : "")
+    + (details.length ? '<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e5eceb;border-radius:10px;overflow:hidden;">' + details.join("") + '</table>' : "");
+  return '<!doctype html><html><body style="margin:0;padding:0;background:#f1f5f4;font-family:Arial,Helvetica,sans-serif;color:#163b35;">'
+    + '<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Swans Travel Accident Management notification</div>'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f4;padding:28px 12px;"><tr><td align="center">'
+    + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #dce7e4;border-radius:14px;overflow:hidden;">'
+    + '<tr><td style="background:#123d38;padding:24px 28px;"><div style="font-size:11px;letter-spacing:2px;color:#9ee4d5;font-weight:bold;text-transform:uppercase;">SWANS TRAVEL</div><div style="font-size:23px;line-height:1.3;color:#ffffff;font-weight:bold;margin-top:8px;">Accident Management</div><div style="font-size:12px;color:#d4e8e3;margin-top:6px;">Operational notification</div></td></tr>'
+    + '<tr><td style="padding:26px 28px 10px;"><div style="display:inline-block;background:#e2f5ef;color:#087767;border-radius:20px;padding:6px 10px;font-size:11px;font-weight:bold;letter-spacing:.5px;">ACTION / INFORMATION</div><h1 style="font-size:21px;line-height:1.35;margin:15px 0 18px;color:#153d37;">' + heading + '</h1>' + content + '</td></tr>'
+    + '<tr><td style="padding:22px 28px 26px;"><div style="border-top:1px solid #e5eceb;padding-top:16px;color:#71817d;font-size:11px;line-height:1.6;">Automated notification from Swans Travel Accident Management.<br>Please open the app to review the case and update any outstanding tasks.<br><span style="color:#9aa8a4;">This is an automated email — please do not reply.</span></div></td></tr>'
+    + '</table><div style="padding:14px 8px;color:#9aa8a4;font-size:10px;">Swans Travel · Accident Management</div></td></tr></table></body></html>';
+}
 async function sendEmail(to, subject, text, eventKey) {
   const url = process.env.GOOGLE_MAILER_URL;
   const secret = process.env.GOOGLE_MAILER_SHARED_SECRET;
@@ -21,7 +47,7 @@ async function sendEmail(to, subject, text, eventKey) {
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ secret: secret, to: to, subject: subject, text: text, eventKey: eventKey })
+    body: JSON.stringify({ secret: secret, to: to, subject: subject, text: text, html: brandedHtml(subject, text), eventKey: eventKey })
   });
   const raw = await response.text();
   let body = {};
