@@ -31,6 +31,13 @@ async function sendEmail(to, subject, text, eventKey) {
   }
   return body.id || (body.duplicate ? "duplicate" : "accepted");
 }
+async function staffEmails(db) {
+  const users = await db.collection("appUsers").get();
+  const active = users.docs.map(function (d) { return d.data(); }).filter(function (u) {
+    return u.email && u.status !== "Disabled" && u.status !== "Invite pending";
+  }).map(function (u) { return String(u.email).trim().toLowerCase(); });
+  return Array.from(new Set(active.concat(csvEmails(process.env.ACCIDENT_ALERT_TO)).filter(Boolean)));
+}
 async function logAttempt(db, eventKey, details) {
   await db.collection("notificationEvents").doc(eventKey).set({
     ...details, attemptedAt: FieldValue.serverTimestamp(), status: details.status || "attempted"
@@ -60,7 +67,7 @@ async function notifyEvent(req, res, db) {
   let subject = "";
   let message = "";
   if (eventType === "new_accident") {
-    to = csvEmails(process.env.ACCIDENT_ALERT_TO);
+    to = await staffEmails(db);
     subject = "New accident recorded: " + (accident.ref || caseId);
     message = "A new accident has been recorded.\n\nReference: " + (accident.ref || caseId) + "\nDate: " + (accident.date || "Not recorded") + "\nDriver: " + (accident.driver || "Not recorded") + "\nVehicle: " + (accident.vehicle || "Not recorded") + "\nLocation: " + (accident.location || "Not recorded") + "\nSeverity: " + (accident.severity || "Not recorded") + "\nRecorded by: " + (actor.email || actor.uid);
   } else if (eventType === "fnol_acknowledged") {
@@ -95,33 +102,48 @@ async function notifyEvent(req, res, db) {
 }
 async function checkDeadlines(res, db) {
   const cases = await db.collection("accidentCases").get();
+  const everyone = await staffEmails(db);
   let checked = 0, sent = 0, failed = 0;
+  const now = Date.now();
   for (const docSnap of cases.docs) {
     const accident = docSnap.data();
+    if (accident.status === "Closed") continue;
     for (const task of (accident.tasks || [])) {
       if (!task || task.status === "Completed" || task.status === "Not required") continue;
       const isInvestigation = task.type === "Investigation";
-      const incidentTime = accident.date ? Date.parse(String(accident.date) + "T" + String(accident.time || "00:00") + ":00") : NaN;
-      const ageHours = Number.isFinite(incidentTime) ? (Date.now() - incidentTime) / 3600000 : 0;
       const dueMs = task.dueAt ? Date.parse(task.dueAt) : NaN;
-      const overdue = Number.isFinite(dueMs) && dueMs < Date.now();
+      const incidentTime = accident.date ? Date.parse(String(accident.date) + "T" + String(accident.time || "00:00") + ":00") : NaN;
+      const ageHours = Number.isFinite(incidentTime) ? (now - incidentTime) / 3600000 : 0;
+      const dueSoon = Number.isFinite(dueMs) && dueMs > now && dueMs - now <= 2 * 3600000;
+      const overdue = Number.isFinite(dueMs) && dueMs <= now;
+      const unacknowledged = task.status === "Pending" && dueSoon;
       const investigation72 = isInvestigation && ageHours >= 72;
-      if (!overdue && !investigation72) continue;
+      if (!dueSoon && !overdue && !investigation72) continue;
       checked++;
-      const kind = investigation72 ? "investigation_72h" : "task_overdue";
+      const kind = overdue ? "task_overdue" : investigation72 ? "investigation_72h" : unacknowledged ? "task_unacknowledged_due_soon" : "task_due_soon";
       const eventKey = kind + ":" + docSnap.id + ":" + task.id;
       const eventRef = db.collection("notificationEvents").doc(eventKey);
       const existing = await eventRef.get();
       if (existing.exists && existing.data().status === "sent") continue;
-      let recipients = csvEmails(process.env.ACCIDENT_ALERT_TO);
       const assignee = String(task.assignee || "");
       const users = await db.collection("appUsers").get();
-      const matched = users.docs.map(function (d) { return d.data(); }).filter(function (u) {
-        return String(u.name || "").trim().toLowerCase() === assignee.trim().toLowerCase() && u.email;
-      });
-      if (matched.length) recipients = matched.map(function (u) { return u.email; });
-      const subject = (investigation72 ? "72-hour investigation deadline" : "Overdue accident task") + ": " + (accident.ref || docSnap.id);
-      const message = "An accident management task needs attention.\n\nAccident: " + (accident.ref || docSnap.id) + "\nTask: " + (task.title || task.type || "Task") + "\nAssigned to: " + (assignee || "Unassigned") + "\nDue: " + (task.dueAt || "72 hours after task creation") + "\nStatus: " + (task.status || "Pending");
+      const assignedTo = users.docs.map(function (d) { return d.data(); }).filter(function (u) {
+        return String(u.name || "").trim().toLowerCase() === assignee.trim().toLowerCase() && u.email && u.status !== "Disabled";
+      }).map(function (u) { return String(u.email).trim().toLowerCase(); });
+      // Deadline and acknowledgement warnings go to the whole accident team, plus the assignee.
+      const recipients = Array.from(new Set(everyone.concat(assignedTo)));
+      const subject = overdue ? "OVERDUE accident task: " + (accident.ref || docSnap.id)
+        : investigation72 ? "72-hour investigation deadline: " + (accident.ref || docSnap.id)
+        : unacknowledged ? "ACTION REQUIRED — unacknowledged task due soon: " + (accident.ref || docSnap.id)
+        : "Accident task deadline approaching: " + (accident.ref || docSnap.id);
+      const message = "An accident management task needs attention.\n\nAccident: " + (accident.ref || docSnap.id)
+        + "\nDriver: " + (accident.driver || "Not recorded")
+        + "\nTask: " + (task.title || task.type || "Task")
+        + "\nAssigned to: " + (assignee || "Unassigned")
+        + "\nDue: " + (task.dueAt || "Not specified")
+        + "\nStatus: " + (task.status || "Pending")
+        + "\nAlert: " + (overdue ? "The deadline has passed." : investigation72 ? "The investigation has reached 72 hours." : unacknowledged ? "The task is still Pending and is not acknowledged." : "The task deadline is within the next two hours.")
+        + "\nPlease update the task or close the case once all required work is complete.";
       try {
         await logAttempt(db, eventKey, { type: kind, caseId: docSnap.id, taskId: task.id, recipients: recipients, status: "attempted" });
         const providerId = await sendEmail(recipients, subject, message, eventKey);
