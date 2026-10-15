@@ -32,7 +32,8 @@ function doPost(e) {
     const key = "sent_" + Utilities.base64EncodeWebSafe(eventKey).slice(0, 180);
     if (props.getProperty(key)) return json({ ok: true, duplicate: true, id: props.getProperty(key) });
     if (MailApp.getRemainingDailyQuota() < clean.length) return json({ ok: false, error: "Google daily email quota reached" });
-    MailApp.sendEmail({ to: clean.join(","), subject: subject, body: message, name: "Swans Accident Management" });
+    const html = String(body.html || "").trim().slice(0, 40000);
+    MailApp.sendEmail({ to: clean.join(","), subject: subject, body: message, htmlBody: html || undefined, name: "Swans Travel | Accident Management" });
     const id = Utilities.getUuid();
     props.setProperty(key, id);
     return json({ ok: true, id: id });
