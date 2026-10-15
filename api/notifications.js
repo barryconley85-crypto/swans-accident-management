@@ -95,7 +95,8 @@ async function checkDeadlines(res, db) {
     for (const task of (accident.tasks || [])) {
       if (!task || task.status === "Completed" || task.status === "Not required") continue;
       const isInvestigation = task.type === "Investigation";
-      const ageHours = task.created ? (Date.now() - Date.parse(task.created)) / 3600000 : 0;
+      const incidentTime = accident.date ? Date.parse(String(accident.date) + "T" + String(accident.time || "00:00") + ":00") : NaN;
+      const ageHours = Number.isFinite(incidentTime) ? (Date.now() - incidentTime) / 3600000 : 0;
       const dueMs = task.dueAt ? Date.parse(task.dueAt) : NaN;
       const overdue = Number.isFinite(dueMs) && dueMs < Date.now();
       const investigation72 = isInvestigation && ageHours >= 72;
