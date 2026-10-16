@@ -18,15 +18,15 @@ function escapeHtml(value) {
   });
 }
 function brandedHtml(subject, text) {
-  const lines = String(text || "").split("\\n");
+  const lines = String(text || "").split("\n");
   const details = [];
   const intro = [];
   for (const line of lines) {
-    const match = line.match(/^([^:]{2,45}):\\s*(.*)$/);
+    const match = line.match(/^([^:]{2,45}):\s*(.*)$/);
     if (match) details.push('<tr><td style="padding:9px 12px;color:#64748b;font-size:12px;border-bottom:1px solid #e8eef0;width:34%;vertical-align:top;">' + escapeHtml(match[1]) + '</td><td style="padding:9px 12px;color:#163b35;font-size:13px;font-weight:600;border-bottom:1px solid #e8eef0;vertical-align:top;">' + escapeHtml(match[2] || "—") + '</td></tr>');
     else if (line.trim()) intro.push(escapeHtml(line));
   }
-  const heading = escapeHtml(subject.replace(/^\\[[^\\]]+\\]\\s*/, ""));
+  const heading = escapeHtml(subject.replace(/^\[[^\]]+\]\s*/, ""));
   const content = (intro.length ? '<p style="margin:0 0 18px;color:#425b56;font-size:14px;line-height:1.7;">' + intro.join("<br>") + '</p>' : "")
     + (details.length ? '<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e5eceb;border-radius:10px;overflow:hidden;">' + details.join("") + '</table>' : "");
   return '<!doctype html><html><body style="margin:0;padding:0;background:#f1f5f4;font-family:Arial,Helvetica,sans-serif;color:#163b35;">'
