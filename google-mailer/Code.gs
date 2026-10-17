@@ -21,8 +21,9 @@ function doPost(e) {
     const recipients = Array.isArray(body.to) ? body.to : [];
     if (!recipients.length || recipients.length > 20) return json({ ok: false, error: "Invalid recipients" });
     const clean = recipients.map(function (x) { return String(x).trim().toLowerCase(); });
-    if (clean.some(function (email) { return !/^[^\s@]+@swanstravel\.com$/.test(email); })) {
-      return json({ ok: false, error: "Recipients must be @swanstravel.com addresses" });
+    // Driver forms may be sent to personal or other non-company addresses.
+    if (clean.some(function (email) { return !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email); })) {
+      return json({ ok: false, error: "One or more recipients are not valid email addresses" });
     }
     const subject = String(body.subject || "").trim().slice(0, 180);
     const message = String(body.text || "").trim().slice(0, 18000);
