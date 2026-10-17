@@ -22,7 +22,7 @@ function doPost(e) {
     if (!recipients.length || recipients.length > 20) return json({ ok: false, error: "Invalid recipients" });
     const clean = recipients.map(function (x) { return String(x).trim().toLowerCase(); });
     // Driver forms may be sent to personal or other non-company addresses.
-    if (clean.some(function (email) { return !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email); })) {
+    if (clean.some(function (email) { return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); })) {
       return json({ ok: false, error: "One or more recipients are not valid email addresses" });
     }
     const subject = String(body.subject || "").trim().slice(0, 180);
