@@ -80,7 +80,7 @@ async function notifyEvent(req, res, db) {
   const eventType = input.type;
   const caseId = String(input.caseId || "");
   const eventKey = String(input.eventKey || "");
-  if (!caseId || !eventKey || !["new_accident", "task_assigned", "fnol_acknowledged"].includes(eventType)) {
+  if (!caseId || !eventKey || !["new_accident", "task_assigned", "fnol_acknowledged", "driver_insurance_form"].includes(eventType)) {
     return res.status(400).json({ error: "Invalid notification event" });
   }
   const eventRef = db.collection("notificationEvents").doc(eventKey);
@@ -92,7 +92,37 @@ async function notifyEvent(req, res, db) {
   let to = [];
   let subject = "";
   let message = "";
-  if (eventType === "new_accident") {
+  if (eventType === "driver_insurance_form") {
+    const driverId = String(input.driverId || accident.driverId || "");
+    let driver = null;
+    if (driverId) {
+      const driverSnap = await db.collection("drivers").doc(driverId).get();
+      if (driverSnap.exists) driver = driverSnap.data();
+    }
+    if (!driver) {
+      const driverSnap = await db.collection("drivers").get();
+      driver = driverSnap.docs.map(function (d) { return d.data(); }).find(function (d) {
+        return String(d.name || "").trim().toLowerCase() === String(accident.driver || "").trim().toLowerCase();
+      }) || null;
+    }
+    const driverEmail = String((driver && driver.email) || "").trim().toLowerCase();
+    if (!driverEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(driverEmail)) {
+      return res.status(400).json({ error: "Add a valid email address to this driver record first" });
+    }
+    const formUrl = String(process.env.INSURANCE_FORM_URL || "").trim();
+    if (!/^https:\/\//i.test(formUrl)) {
+      return res.status(503).json({ error: "INSURANCE_FORM_URL is not configured" });
+    }
+    to = [driverEmail];
+    subject = "Action required: complete your accident insurance form — " + (accident.ref || caseId);
+    message = "Hello " + String((driver && driver.name) || accident.driver || "Driver") + ",\n\n"
+      + "Please complete the Swans Travel accident insurance form using the Adobe link below.\n\n"
+      + "Adobe insurance form: " + formUrl + "\n\n"
+      + "Instructions:\n1. Open the link above.\n2. Complete all required fields accurately.\n3. Check your answers and submit the form.\n4. If the link does not open or you need help, contact the Swans Travel office.\n\n"
+      + "Accident reference: " + (accident.ref || caseId) + "\nVehicle: " + (accident.vehicle || "Not recorded")
+      + "\nIncident date: " + (accident.date || "Not recorded")
+      + "\n\nPlease complete this as soon as possible.\n\nSwans Travel\nAccident Management";
+  } else if (eventType === "new_accident") {
     to = await staffEmails(db);
     subject = "New accident recorded: " + (accident.ref || caseId);
     message = "A new accident has been recorded.\n\nReference: " + (accident.ref || caseId) + "\nDate: " + (accident.date || "Not recorded") + "\nDriver: " + (accident.driver || "Not recorded") + "\nVehicle: " + (accident.vehicle || "Not recorded") + "\nLocation: " + (accident.location || "Not recorded") + "\nSeverity: " + (accident.severity || "Not recorded") + "\nRecorded by: " + (actor.email || actor.uid);
