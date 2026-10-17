@@ -38,7 +38,7 @@ function brandedHtml(subject, text) {
     + '<tr><td style="padding:22px 28px 26px;"><div style="border-top:1px solid #e5eceb;padding-top:16px;color:#71817d;font-size:11px;line-height:1.6;">Automated notification from Swans Travel Accident Management.<br>Please open the app to review the case and update any outstanding tasks.<br><span style="color:#9aa8a4;">This is an automated email — please do not reply.</span></div></td></tr>'
     + '</table><div style="padding:14px 8px;color:#9aa8a4;font-size:10px;">Swans Travel · Accident Management</div></td></tr></table></body></html>';
 }
-async function sendEmail(to, subject, text, eventKey) {
+async function sendEmail(to, subject, text, eventKey, htmlOverride) {
   const url = process.env.GOOGLE_MAILER_URL;
   const secret = process.env.GOOGLE_MAILER_SHARED_SECRET;
   if (!url) throw new Error("GOOGLE_MAILER_URL is not configured");
@@ -47,7 +47,7 @@ async function sendEmail(to, subject, text, eventKey) {
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ secret: secret, to: to, subject: subject, text: text, html: brandedHtml(subject, text), eventKey: eventKey })
+    body: JSON.stringify({ secret: secret, to: to, subject: subject, text: text, html: htmlOverride || brandedHtml(subject, text), eventKey: eventKey })
   });
   const raw = await response.text();
   let body = {};
@@ -130,6 +130,29 @@ async function notifyEvent(req, res, db) {
     to = csvEmails(process.env.FNOL_ALERT_TO || process.env.ACCIDENT_ALERT_TO);
     subject = "FNOL acknowledged: " + (accident.ref || caseId);
     message = "FNOL has been acknowledged for accident " + (accident.ref || caseId) + ".\nDriver: " + (accident.driver || "Not recorded") + "\nAcknowledged by: " + (accident.fnolAcknowledgedBy || actor.email || actor.uid) + "\nReference: " + (accident.fnolReference || "Not recorded");
+  } else if (eventType === "driver_insurance_form") {
+    const formUrl = String(process.env.ADOBE_INSURANCE_FORM_URL || "").trim();
+    if (!formUrl || !/^https:\/\//i.test(formUrl)) return res.status(503).json({ error: "Adobe insurance form link is not configured" });
+    const driverId = String(input.driverId || accident.driverId || "");
+    let driver = null;
+    if (driverId) {
+      const driverSnap = await db.collection("drivers").doc(driverId).get();
+      if (driverSnap.exists) driver = driverSnap.data();
+    }
+    if (!driver) {
+      const driverSnap = await db.collection("drivers").where("name", "==", accident.driver).limit(1).get();
+      if (!driverSnap.empty) driver = driverSnap.docs[0].data();
+    }
+    const driverEmail = String(driver && driver.email || "").trim().toLowerCase();
+    if (!driver || !driverEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(driverEmail)) {
+      return res.status(400).json({ error: "This driver has no valid email address. Add it in Register > Drivers first." });
+    }
+    to = [driverEmail];
+    subject = "Action required: complete your insurance form — " + (accident.ref || caseId);
+    message = "Hello " + (driver.name || accident.driver || "there") + ",\n\nPlease complete the Swans Travel insurance paperwork for the incident recorded below.\n\nOpen your Adobe form using the link provided, complete all required fields accurately, check your answers, and submit the form when finished. Please contact the office if you have difficulty accessing or completing it.\n\nAdobe insurance form: " + formUrl + "\n\nAccident reference: " + (accident.ref || caseId) + "\nIncident date: " + (accident.date || "Not recorded") + "\nVehicle: " + (accident.vehicle || "Not recorded") + "\n\nThank you,\nSwans Travel";
+    const safe = function (v) { return String(v == null ? "" : v).replace(/[&<>"]/g, function (ch) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]; }); };
+    const html = '<!doctype html><html><body style="margin:0;background:#f1f5f4;font-family:Arial,Helvetica,sans-serif;color:#163b35;padding:24px 12px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="600" style="max-width:600px;width:100%;background:#fff;border:1px solid #dce7e4;border-radius:14px;overflow:hidden" cellpadding="0" cellspacing="0"><tr><td style="background:#123d38;padding:24px 28px;color:#fff"><div style="font-size:11px;letter-spacing:2px;color:#9ee4d5;font-weight:bold">SWANS TRAVEL</div><div style="font-size:23px;font-weight:bold;margin-top:8px">Insurance paperwork</div></td></tr><tr><td style="padding:28px"><p style="font-size:15px;line-height:1.7">Hello ' + safe(driver.name || accident.driver || "Driver") + ',</p><p style="font-size:14px;line-height:1.7">Please complete the insurance paperwork for the incident below. This form is completed online through Adobe.</p><div style="background:#f5f8f7;border:1px solid #e0e9e6;border-radius:10px;padding:16px;margin:20px 0"><b>Accident reference:</b> ' + safe(accident.ref || caseId) + '<br><b>Incident date:</b> ' + safe(accident.date || "Not recorded") + '<br><b>Vehicle:</b> ' + safe(accident.vehicle || "Not recorded") + '</div><p style="font-size:14px;line-height:1.7"><b>What you need to do</b><br>1. Select the button below to open the Adobe form.<br>2. Complete every required section accurately.<br>3. Check your answers and submit the form.<br>4. If you cannot open or submit the form, contact the Swans Travel office promptly.</p><p style="margin:26px 0;text-align:center"><a href="' + safe(formUrl) + '" style="display:inline-block;background:#087767;color:#fff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:8px">Open insurance form</a></p><p style="font-size:12px;color:#647875;line-height:1.6">Please complete this as soon as possible. Do not forward the form link to anyone else.</p><p style="font-size:14px;line-height:1.7">Thank you,<br><b>Swans Travel</b></p></td></tr><tr><td style="background:#f8faf9;border-top:1px solid #e5eceb;padding:16px 28px;color:#71817d;font-size:11px">Automated email from Swans Travel Accident Management. Please contact the office if you need help.</td></tr></table></td></tr></table></body></html>';
+    input._driverEmailHtml = html;
   } else {
     const taskId = String(input.taskId || "");
     const task = (accident.tasks || []).find(function (t) { return t.id === taskId; });
@@ -148,7 +171,7 @@ async function notifyEvent(req, res, db) {
   }
   try {
     await logAttempt(db, eventKey, { type: eventType, caseId: caseId, actor: actor.uid, recipients: to, status: "attempted" });
-    const providerId = await sendEmail(to, subject, message, eventKey);
+    const providerId = await sendEmail(to, subject, message, eventKey, input._driverEmailHtml);
     await eventRef.set({ type: eventType, caseId: caseId, actor: actor.uid, recipients: to, subject: subject, status: "sent", providerId: providerId, sentAt: FieldValue.serverTimestamp() }, { merge: true });
     return res.status(200).json({ ok: true, sent: true });
   } catch (error) {
