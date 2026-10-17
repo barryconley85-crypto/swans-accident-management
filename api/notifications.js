@@ -122,6 +122,7 @@ async function notifyEvent(req, res, db) {
       + "Accident reference: " + (accident.ref || caseId) + "\nVehicle: " + (accident.vehicle || "Not recorded")
       + "\nIncident date: " + (accident.date || "Not recorded")
       + "\n\nPlease complete this as soon as possible.\n\nSwans Travel\nAccident Management";
+    input._driverEmailHtml = brandedHtml(subject, message);
   } else if (eventType === "new_accident") {
     to = await staffEmails(db);
     subject = "New accident recorded: " + (accident.ref || caseId);
