@@ -13,6 +13,7 @@ This is the free Google Apps Script mail route. No Resend account, paid email se
 In Vercel → swans-accident-management → Settings → Environment Variables, set the following for **Production** (and Preview if needed):
 - `GOOGLE_MAILER_URL`: the deployed Apps Script Web app URL ending in `/exec`.
 - `GOOGLE_MAILER_SHARED_SECRET`: exactly the same secret as the Apps Script `MAILER_SHARED_SECRET` property.
+- `INSURANCE_FORM_URL`: the permanent HTTPS Adobe insurance-form link sent to drivers.
 - `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64`: existing Firebase Admin service-account value, required by the notification API.
 - `ACCIDENT_ALERT_TO`: comma-separated team addresses, each ending in `@swanstravel.com`.
 - `FNOL_ALERT_TO`: optional comma-separated FNOL addresses.
