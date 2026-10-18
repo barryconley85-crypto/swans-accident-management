@@ -14,16 +14,15 @@ function doPost(e) {
   try {
     const body = JSON.parse((e && e.postData && e.postData.contents) || "{}");
     const props = PropertiesService.getScriptProperties();
-    const expected = props.getProperty("MAILER_SHARED_SECRET");
+    const expected = props.getProperty("MAILER_SHARED_SECRET") || props.getProperty("WEBHOOK_SECRET");
     if (!expected || !body.secret || !constantTimeEqual(String(body.secret), expected)) {
       return json({ ok: false, error: "Unauthorized" });
     }
     const recipients = Array.isArray(body.to) ? body.to : [];
     if (!recipients.length || recipients.length > 20) return json({ ok: false, error: "Invalid recipients" });
     const clean = recipients.map(function (x) { return String(x).trim().toLowerCase(); });
-    // Driver forms may be sent to personal or other non-company addresses.
-    if (clean.some(function (email) { return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); })) {
-      return json({ ok: false, error: "One or more recipients are not valid email addresses" });
+    if (clean.some(function (email) { return !/^[^\s@]+@swanstravel\.com$/.test(email); })) {
+      return json({ ok: false, error: "Recipients must use an approved Swans Travel email address" });
     }
     const subject = String(body.subject || "").trim().slice(0, 180);
     const message = String(body.text || "").trim().slice(0, 18000);
@@ -33,8 +32,10 @@ function doPost(e) {
     const key = "sent_" + Utilities.base64EncodeWebSafe(eventKey).slice(0, 180);
     if (props.getProperty(key)) return json({ ok: true, duplicate: true, id: props.getProperty(key) });
     if (MailApp.getRemainingDailyQuota() < clean.length) return json({ ok: false, error: "Google daily email quota reached" });
-    const html = String(body.html || "").trim().slice(0, 40000);
-    MailApp.sendEmail({ to: clean.join(","), subject: subject, body: message, htmlBody: html || undefined, name: "Swans Travel | Accident Management" });
+    const suppliedHtml = String(body.html || "").trim();
+    const html = (suppliedHtml || brandedHtml(subject, message)).slice(0, 40000);
+    // Keep `body` populated so mail clients that disable HTML can show the message.
+    MailApp.sendEmail({ to: clean.join(","), subject: subject, body: message, htmlBody: html, name: "Swans Travel | Accident Management" });
     const id = Utilities.getUuid();
     props.setProperty(key, id);
     return json({ ok: true, id: id });
@@ -43,6 +44,23 @@ function doPost(e) {
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
+}
+function escapeHtml(value) {
+  return String(value == null ? "" : value).replace(/[&<>\"']/g, function (ch) {
+    return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '\"': "&quot;", "'": "&#39;" })[ch];
+  });
+}
+function brandedHtml(subject, message) {
+  const paragraphs = String(message || "").split(/\n\s*\n/).map(function (part) {
+    return part.trim() ? '<p style="margin:0 0 16px;color:#425b56;font-size:14px;line-height:1.7;white-space:pre-line;">' + escapeHtml(part.trim()) + '</p>' : "";
+  }).join("");
+  return '<!doctype html><html><body style="margin:0;padding:24px 12px;background:#f1f5f4;font-family:Arial,Helvetica,sans-serif;color:#163b35;">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f4;padding:16px 0;"><tr><td align="center">'
+    + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#fff;border:1px solid #dce7e4;border-radius:14px;overflow:hidden;">'
+    + '<tr><td style="background:#123d38;padding:24px 28px;"><div style="font-size:11px;letter-spacing:2px;color:#9ee4d5;font-weight:bold;">SWANS TRAVEL</div><div style="font-size:23px;line-height:1.3;color:#fff;font-weight:bold;margin-top:8px;">Accident Management</div></td></tr>'
+    + '<tr><td style="padding:28px;"><h1 style="font-size:21px;line-height:1.35;margin:0 0 18px;color:#153d37;">' + escapeHtml(subject) + '</h1>' + paragraphs + '</td></tr>'
+    + '<tr><td style="padding:18px 28px;background:#f8faf9;border-top:1px solid #e5eceb;color:#71817d;font-size:11px;line-height:1.6;">Automated notification from Swans Travel Accident Management.<br>This is an automated email — please do not reply.</td></tr>'
+    + '</table><div style="padding:14px 8px;color:#9aa8a4;font-size:10px;">Swans Travel · Accident Management</div></td></tr></table></body></html>';
 }
 function constantTimeEqual(a, b) {
   if (a.length !== b.length) return false;
@@ -53,3 +71,4 @@ function constantTimeEqual(a, b) {
 function json(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
+
