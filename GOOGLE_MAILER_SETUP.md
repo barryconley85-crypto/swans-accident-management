@@ -5,9 +5,9 @@ This is the free Google Apps Script mail route. No Resend account, paid email se
 ## 1. Create the mailer
 1. Sign in to the Google account that should send the emails, then open https://script.google.com/home.
 2. Create a new project named **Swans Accident Mailer**.
-3. Replace the contents of `Code.gs` with the code in [google-mailer/Code.gs](google-mailer/Code.gs) in this repository and save.
+3. Replace the contents of `Code.gs` with the code in [google-mailer/Code.gs](google-mailer/Code.gs) in this repository and save. The gateway sends branded HTML when provided and builds a branded HTML version from the plain-text body when a caller omits it; it always keeps the plain-text body for mail clients that cannot display HTML.
 4. In **Project Settings → Script Properties**, add `MAILER_SHARED_SECRET` with a strong random secret. Do not put this value in GitHub or send it in chat.
-5. Under **Deploy → New deployment**, select **Web app**. Set **Execute as: Me** and **Who has access: Anyone**, then deploy and authorise the requested mail permissions. Copy the Web app URL ending in `/exec`. The endpoint validates the shared secret in every request and only permits @swanstravel.com recipients.
+5. Under **Deploy → Manage deployments**, edit the existing Web app deployment and select **New version** (or create a new Web app deployment if none exists). Set **Execute as: Me** and **Who has access: Anyone**, then deploy and authorise the requested mail permissions. Copy the Web app URL ending in `/exec` if it changes. Saving the Apps Script source alone does not update the live `/exec` deployment. The endpoint validates the shared secret in every request and only permits `@swanstravel.com` recipients.
 
 ## 2. Vercel environment variables
 In Vercel → swans-accident-management → Settings → Environment Variables, set the following for **Production** (and Preview if needed):
@@ -26,3 +26,4 @@ Test one new accident and confirm the recipient receives it. Then test a task as
 
 ## Important
 The Apps Script Web App must be deployed and its URL/secret configured in Vercel before live mail can work. Keep the shared secret private. Google imposes daily sending quotas; the mailer returns a clear error if its remaining quota is insufficient.
+
