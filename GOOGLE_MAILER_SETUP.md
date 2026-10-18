@@ -14,6 +14,8 @@ In Vercel → swans-accident-management → Settings → Environment Variables, 
 - `GOOGLE_MAILER_URL`: the deployed Apps Script Web app URL ending in `/exec`.
 - `GOOGLE_MAILER_SHARED_SECRET`: exactly the same secret as the Apps Script `MAILER_SHARED_SECRET` property.
 - `INSURANCE_FORM_URL`: the permanent HTTPS Adobe insurance-form link sent to drivers.
+- `APP_BASE_URL`: optional public app URL used to create tracked email links; defaults to `https://swans-accident-management.vercel.app`.
+- `INSURANCE_FORM_CLICK_ALERT_TO`: optional comma-separated Swans Travel addresses to receive the first click alert. If unset, the alert goes to the staff member who sent the form, then `ACCIDENT_ALERT_TO`, then active app users.
 - `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64`: existing Firebase Admin service-account value, required by the notification API.
 - `ACCIDENT_ALERT_TO`: comma-separated team addresses, each ending in `@swanstravel.com`.
 - `FNOL_ALERT_TO`: optional comma-separated FNOL addresses.
@@ -27,3 +29,4 @@ Test one new accident and confirm the recipient receives it. Then test a task as
 ## Important
 The Apps Script Web App must be deployed and its URL/secret configured in Vercel before live mail can work. Keep the shared secret private. Google imposes daily sending quotas; the mailer returns a clear error if its remaining quota is insufficient.
 
+Insurance form emails use a private, unguessable tracking link that redirects to `INSURANCE_FORM_URL`. The first recorded link request sends a branded alert to `INSURANCE_FORM_CLICK_ALERT_TO`, falling back to the staff member who sent the form, `ACCIDENT_ALERT_TO`, then active app users. Email security scanners can open links automatically, so a click alert is evidence of a link request, not reliable proof that a person opened it or completed the form. Adobe form completion must still be confirmed from Adobe or marked in the app workflow.

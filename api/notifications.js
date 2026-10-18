@@ -1,6 +1,7 @@
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { createHash, randomBytes } from "node:crypto";
 
 function adminApp() {
   if (getApps().length) return getApps()[0];
@@ -103,6 +104,8 @@ async function notifyEvent(req, res, db) {
   } else if (eventType === "driver_insurance_form") {
     const formUrl = String(process.env.INSURANCE_FORM_URL || "").trim();
     if (!formUrl || !/^https:\/\//i.test(formUrl)) return res.status(503).json({ error: "Adobe insurance form link is not configured" });
+    const baseUrl = String(process.env.APP_BASE_URL || "https://swans-accident-management.vercel.app").replace(/\/$/, "");
+    if (!/^https:\/\//i.test(baseUrl)) return res.status(503).json({ error: "App base URL must use HTTPS" });
     const driverId = String(input.driverId || accident.driverId || "");
     let driver = null;
     if (driverId) {
@@ -123,6 +126,22 @@ async function notifyEvent(req, res, db) {
     subject = "Action required: complete your insurance form — " + (accident.ref || caseId);
     message = "Hello " + (driver.name || accident.driver || "there") + ",\n\nPlease complete the Swans Travel insurance paperwork for the incident recorded below.\n\nOpen your Adobe form using the link provided, complete all required fields accurately, check your answers, and submit the form when finished. Please contact the office if you have difficulty accessing or completing it.\n\nAdobe insurance form: " + formUrl + "\n\nAccident reference: " + (accident.ref || caseId) + "\nIncident date: " + (accident.date || "Not recorded") + "\nVehicle: " + (accident.vehicle || "Not recorded") + "\n\nThank you,\nSwans Travel";
     const safe = function (v) { return String(v == null ? "" : v).replace(/[&<>"]/g, function (ch) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]; }); };
+    const trackingToken = randomBytes(32).toString("base64url");
+    const trackingId = createHash("sha256").update(trackingToken).digest("hex");
+    const trackedFormUrl = baseUrl + "/api/insurance-form-click?t=" + encodeURIComponent(trackingToken);
+    message = message.replaceAll(formUrl, trackedFormUrl);
+    await db.collection("insuranceFormLinks").doc(trackingId).set({
+      caseId: caseId,
+      accidentRef: accident.ref || caseId,
+      driverName: driver.name || accident.driver || "Driver",
+      driverEmail: driverEmail,
+      requestedByEmail: String(actor.email || "").trim().toLowerCase(),
+      targetUrl: formUrl,
+      emailEventKey: eventKey,
+      sentAt: FieldValue.serverTimestamp(),
+      clickCount: 0,
+      status: "sent"
+    });
     const html = '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#eef3f1;font-family:Arial,Helvetica,sans-serif;color:#183b35;">'
       + '<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Action required: complete your Swans Travel insurance form for accident ' + safe(accident.ref || caseId) + '.</div>'
       + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef3f1;padding:28px 12px;"><tr><td align="center">'
@@ -131,8 +150,8 @@ async function notifyEvent(req, res, db) {
       + '<tr><td style="padding:30px 32px 12px;"><div style="display:inline-block;background:#e5f5ef;color:#087767;border-radius:20px;padding:7px 11px;font-size:10px;font-weight:bold;letter-spacing:.7px;">DRIVER ACTION REQUIRED</div><h1 style="font-size:25px;line-height:1.25;margin:16px 0 14px;color:#153d37;">Complete your insurance form</h1><p style="font-size:15px;line-height:1.7;margin:0 0 12px;color:#294a43;">Hello ' + safe(driver.name || accident.driver || "Driver") + ',</p><p style="font-size:14px;line-height:1.75;margin:0;color:#526761;">Please complete the online insurance form for the incident below. Review your answers carefully before you submit it.</p></td></tr>'
       + '<tr><td style="padding:18px 32px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f8f7;border:1px solid #e2ebe7;border-radius:12px;"><tr><td style="padding:16px 18px;border-bottom:1px solid #e2ebe7;color:#718079;font-size:12px;width:38%;">Accident reference</td><td style="padding:16px 18px;border-bottom:1px solid #e2ebe7;color:#183b35;font-size:13px;font-weight:bold;">' + safe(accident.ref || caseId) + '</td></tr><tr><td style="padding:13px 18px;border-bottom:1px solid #e2ebe7;color:#718079;font-size:12px;">Incident date</td><td style="padding:13px 18px;border-bottom:1px solid #e2ebe7;color:#183b35;font-size:13px;font-weight:bold;">' + safe(accident.date || "Not recorded") + '</td></tr><tr><td style="padding:13px 18px;color:#718079;font-size:12px;">Vehicle</td><td style="padding:13px 18px;color:#183b35;font-size:13px;font-weight:bold;">' + safe(accident.vehicle || "Not recorded") + '</td></tr></table></td></tr>'
       + '<tr><td style="padding:22px 32px 8px;"><h2 style="font-size:15px;margin:0 0 13px;color:#183b35;">What you need to do</h2><table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="width:30px;vertical-align:top;padding:0 0 10px;"><span style="display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:#e5f5ef;color:#087767;font-size:11px;font-weight:bold;">1</span></td><td style="padding:2px 0 10px;color:#526761;font-size:13px;line-height:1.6;">Open the secure form using the button below.</td></tr><tr><td style="width:30px;vertical-align:top;padding:0 0 10px;"><span style="display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:#e5f5ef;color:#087767;font-size:11px;font-weight:bold;">2</span></td><td style="padding:2px 0 10px;color:#526761;font-size:13px;line-height:1.6;">Complete each required section accurately.</td></tr><tr><td style="width:30px;vertical-align:top;"><span style="display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:#e5f5ef;color:#087767;font-size:11px;font-weight:bold;">3</span></td><td style="padding:2px 0 0;color:#526761;font-size:13px;line-height:1.6;">Check your answers, then submit the form.</td></tr></table></td></tr>'
-      + '<tr><td align="center" style="padding:24px 32px 12px;"><a href="' + safe(formUrl) + '" style="display:inline-block;background:#087767;border-radius:9px;padding:15px 28px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;">Open insurance form</a></td></tr>'
-      + '<tr><td style="padding:8px 32px 26px;text-align:center;"><p style="font-size:11px;line-height:1.65;color:#718079;margin:0;">If the button does not open, copy this address into your browser:<br><a href="' + safe(formUrl) + '" style="color:#087767;word-break:break-all;">' + safe(formUrl) + '</a></p><p style="font-size:12px;line-height:1.65;color:#526761;margin:16px 0 0;">If you have difficulty accessing or completing the form, contact the Swans Travel office.</p></td></tr>'
+      + '<tr><td align="center" style="padding:24px 32px 12px;"><a href="' + safe(trackedFormUrl) + '" style="display:inline-block;background:#087767;border-radius:9px;padding:15px 28px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;">Open insurance form</a></td></tr>'
+      + '<tr><td style="padding:8px 32px 26px;text-align:center;"><p style="font-size:11px;line-height:1.65;color:#718079;margin:0;">If the button does not open, copy this address into your browser:<br><a href="' + safe(trackedFormUrl) + '" style="color:#087767;word-break:break-all;">' + safe(trackedFormUrl) + '</a></p><p style="font-size:12px;line-height:1.65;color:#526761;margin:16px 0 0;">If you have difficulty accessing or completing the form, contact the Swans Travel office.</p></td></tr>'
       + '<tr><td style="background:#f7faf8;border-top:1px solid #e5eceb;padding:18px 32px;color:#718079;font-size:11px;line-height:1.6;">Automated email from Swans Travel Accident Management.<br>Please do not forward the form link. This mailbox is not monitored for replies.</td></tr>'
       + '</table><div style="padding:14px 8px;color:#98a7a1;font-size:10px;">Swans Travel - Accident Management</div></td></tr></table></body></html>';
     input._driverEmailHtml = html;
