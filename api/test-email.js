@@ -40,7 +40,16 @@ export default async function handler(req, res) {
       subject, status: "attempted", attemptedAt: FieldValue.serverTimestamp()
     });
 
-    const html = '<!doctype html><html><body style="font-family:Arial,sans-serif;color:#163b35;padding:24px"><h2>Swans Travel Accident Management</h2><p>This is a test email from the Accident Management app.</p><p>If you received this message, the app successfully reached the configured Google mailer.</p><p>Requested by: ' + String(actor.email || actor.uid).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])) + '</p><p>Time: ' + new Date().toLocaleString("en-GB", { timeZone: "Europe/London" }) + '</p></body></html>';
+    const escapeHtml = value => String(value == null ? "" : value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const html = '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+      + '<body style="margin:0;padding:0;background:#eef3f1;font-family:Arial,Helvetica,sans-serif;color:#183b35;">'
+      + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef3f1;padding:28px 12px;"><tr><td align="center">'
+      + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #dce7e4;border-radius:14px;overflow:hidden;">'
+      + '<tr><td style="background:#123d38;padding:24px 30px;"><div style="font-size:11px;letter-spacing:2px;color:#a8e6d8;font-weight:bold;">SWANS TRAVEL</div><div style="font-size:22px;line-height:1.3;color:#ffffff;font-weight:bold;margin-top:7px;">Accident Management</div></td></tr>'
+      + '<tr><td style="padding:30px 32px;"><div style="display:inline-block;background:#e5f5ef;color:#087767;border-radius:20px;padding:7px 11px;font-size:10px;font-weight:bold;letter-spacing:.7px;">EMAIL DELIVERY TEST</div><h1 style="font-size:23px;line-height:1.3;margin:16px 0 12px;color:#153d37;">Your email is displaying as HTML</h1><p style="font-size:14px;line-height:1.7;margin:0 0 18px;color:#526761;">This branded message confirms that the Accident Management app reached the configured Google mailer and supplied an HTML email.</p>'
+      + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f8f7;border:1px solid #e2ebe7;border-radius:10px;"><tr><td style="padding:14px 16px;border-bottom:1px solid #e2ebe7;color:#718079;font-size:12px;width:38%;">Requested by</td><td style="padding:14px 16px;border-bottom:1px solid #e2ebe7;color:#183b35;font-size:13px;font-weight:bold;">' + escapeHtml(actor.email || actor.uid) + '</td></tr><tr><td style="padding:14px 16px;color:#718079;font-size:12px;">Time</td><td style="padding:14px 16px;color:#183b35;font-size:13px;font-weight:bold;">' + escapeHtml(new Date().toLocaleString("en-GB", { timeZone: "Europe/London" })) + '</td></tr></table></td></tr>'
+      + '<tr><td style="background:#f7faf8;border-top:1px solid #e5eceb;padding:18px 32px;color:#718079;font-size:11px;line-height:1.6;">Automated email from Swans Travel Accident Management.<br>This is a test message; no accident record was created.</td></tr>'
+      + '</table><div style="padding:14px 8px;color:#98a7a1;font-size:10px;">Swans Travel - Accident Management</div></td></tr></table></body></html>';
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -67,3 +76,4 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: detail });
   }
 }
+
