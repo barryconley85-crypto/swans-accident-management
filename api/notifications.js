@@ -113,9 +113,11 @@ async function notifyEvent(req, res, db) {
       const driverSnap = await db.collection("drivers").where("name", "==", accident.driver).limit(1).get();
       if (!driverSnap.empty) driver = driverSnap.docs[0].data();
     }
-    const driverEmail = String(driver && driver.email || "").trim().toLowerCase();
-    if (!driver || !driverEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(driverEmail)) {
-      return res.status(400).json({ error: "This driver has no valid email address. Add it in Register > Drivers first." });
+    // Prefer the saved driver email. The UI only sends recipientEmail when the
+    // profile has no email, allowing one-off delivery without editing records.
+    const driverEmail = String(driver && driver.email || input.recipientEmail || "").trim().toLowerCase();
+    if (!driverEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(driverEmail)) {
+      return res.status(400).json({ error: "This driver has no valid email address. Add it in Register > Drivers or enter an email address when prompted." });
     }
     to = [driverEmail];
     subject = "Action required: complete your insurance form — " + (accident.ref || caseId);
