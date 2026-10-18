@@ -104,7 +104,10 @@ async function notifyEvent(req, res, db) {
   } else if (eventType === "driver_insurance_form") {
     const formUrl = String(process.env.INSURANCE_FORM_URL || "").trim();
     if (!formUrl || !/^https:\/\//i.test(formUrl)) return res.status(503).json({ error: "Adobe insurance form link is not configured" });
-    const baseUrl = String(process.env.APP_BASE_URL || "https://swans-accident-management.vercel.app").replace(/\/$/, "");
+    const previewDeployment = process.env.VERCEL_ENV === "preview" || process.env.VITE_FIREBASE_ENVIRONMENT === "preview";
+    const configuredBaseUrl = String(process.env.APP_BASE_URL || "").trim();
+    if (previewDeployment && !configuredBaseUrl) return res.status(503).json({ error: "Preview app base URL is not configured" });
+    const baseUrl = String(configuredBaseUrl || "https://swans-accident-management.vercel.app").replace(/\/$/, "");
     if (!/^https:\/\//i.test(baseUrl)) return res.status(503).json({ error: "App base URL must use HTTPS" });
     const driverId = String(input.driverId || accident.driverId || "");
     let driver = null;
