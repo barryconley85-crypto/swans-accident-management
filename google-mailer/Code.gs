@@ -72,3 +72,42 @@ function json(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
 
+/**
+ * Scheduled accident deadline checker.
+ * Run setupAccidentDeadlineChecks once from the Apps Script editor.
+ * It creates a 15-minute trigger that calls the protected Vercel endpoint.
+ */
+function setupAccidentDeadlineChecks() {
+  const properties = PropertiesService.getScriptProperties();
+  const secret = properties.getProperty("CRON_SECRET") || properties.getProperty("MAILER_SHARED_SECRET") || properties.getProperty("WEBHOOK_SECRET");
+  if (!secret) throw new Error("Set MAILER_SHARED_SECRET (or CRON_SECRET) in Project Settings > Script properties before enabling deadline checks.");
+
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === "runAccidentDeadlineChecks") {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  ScriptApp.newTrigger("runAccidentDeadlineChecks").timeBased().everyMinutes(15).create();
+  runAccidentDeadlineChecks();
+}
+
+function runAccidentDeadlineChecks() {
+  const properties = PropertiesService.getScriptProperties();
+  const secret = properties.getProperty("CRON_SECRET") || properties.getProperty("MAILER_SHARED_SECRET") || properties.getProperty("WEBHOOK_SECRET");
+  if (!secret) throw new Error("No scheduler secret configured in Apps Script properties.");
+
+  const endpoint = properties.getProperty("ACCIDENT_NOTIFICATIONS_URL") || "https://swans-accident-management.vercel.app/api/notifications";
+  const response = UrlFetchApp.fetch(endpoint, {
+    method: "get",
+    headers: { Authorization: "Bearer " + secret },
+    muteHttpExceptions: true
+  });
+  const status = response.getResponseCode();
+  const body = response.getContentText();
+  console.log("Accident deadline check returned HTTP " + status + ": " + body);
+  if (status < 200 || status >= 300) {
+    throw new Error("Accident deadline check failed with HTTP " + status + ": " + body);
+  }
+  return body;
+}
