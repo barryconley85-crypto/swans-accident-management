@@ -167,23 +167,71 @@ async function checkDeadlines(res, db) {
   const everyone = await staffEmails(db);
   let checked = 0, sent = 0, failed = 0;
   const now = Date.now();
+  async function sendDeadlineNotice({ eventKey, kind, caseId, subject, message, taskId }) {
+    checked++;
+    const eventRef = db.collection("notificationEvents").doc(eventKey);
+    const existing = await eventRef.get();
+    if (existing.exists && existing.data().status === "sent") return;
+    const recipients = everyone;
+    try {
+      await logAttempt(db, eventKey, { type: kind, caseId, taskId: taskId || null, recipients, status: "attempted" });
+      const providerId = await sendEmail(recipients, subject, message, eventKey);
+      await eventRef.set({ type: kind, caseId, taskId: taskId || null, recipients, subject, status: "sent", providerId, sentAt: FieldValue.serverTimestamp() }, { merge: true });
+      sent++;
+    } catch (error) {
+      await eventRef.set({ type: kind, caseId, taskId: taskId || null, recipients, status: "failed", error: String(error.message || error), failedAt: FieldValue.serverTimestamp() }, { merge: true });
+      failed++;
+    }
+  }
   for (const docSnap of cases.docs) {
     const accident = docSnap.data();
-    if (accident.status === "Closed") continue;
+    if (accident.status === "Closed" || accident.incidentKind === "Near miss") continue;
+    const caseId = docSnap.id;
+    const ref = accident.ref || caseId;
+    const incidentTime = accident.date ? Date.parse(String(accident.date) + "T" + String(accident.time || "00:00") + ":00") : NaN;
+    const ageMs = Number.isFinite(incidentTime) ? now - incidentTime : NaN;
+    const ageHours = Number.isFinite(ageMs) ? ageMs / 3600000 : NaN;
+    if (Number.isFinite(ageMs) && ageMs >= 0) {
+      const fnolNotRequired = accident.fnol === "Not required";
+      const fnolDone = !!accident.fnolAcknowledgedAt;
+      if (!fnolNotRequired && !fnolDone && ageMs >= 45 * 60000 && ageMs < 60 * 60000) {
+        await sendDeadlineNotice({
+          eventKey: "timer_fnol_approaching:" + caseId, kind: "timer_fnol_approaching", caseId,
+          subject: "FNOL deadline approaching: " + ref,
+          message: "The one-hour FNOL deadline is approaching.\n\nAccident: " + ref + "\nDriver: " + (accident.driver || "Not recorded") + "\nVehicle: " + (accident.vehicle || "Not recorded") + "\nIncident time: " + (accident.date || "") + " " + (accident.time || "") + "\nTime elapsed: " + Math.floor(ageMs / 60000) + " minutes\n\nPlease ensure the insurer has been notified and record the FNOL acknowledgement in the app."
+        });
+      }
+      if (!fnolNotRequired && !fnolDone && ageMs >= 60 * 60000) {
+        await sendDeadlineNotice({
+          eventKey: "timer_fnol_overdue:" + caseId, kind: "timer_fnol_overdue", caseId,
+          subject: "OVERDUE: one-hour FNOL deadline missed: " + ref,
+          message: "The one-hour FNOL deadline has passed and the app does not show an acknowledgement.\n\nAccident: " + ref + "\nDriver: " + (accident.driver || "Not recorded") + "\nVehicle: " + (accident.vehicle || "Not recorded") + "\nIncident time: " + (accident.date || "") + " " + (accident.time || "") + "\nTime elapsed: " + Math.floor(ageMs / 60000) + " minutes\n\nPlease notify the insurer if this has not already been done, then record the acknowledgement in the app."
+        });
+      }
+      if (ageHours >= 60 && ageHours < 72) {
+        await sendDeadlineNotice({
+          eventKey: "timer_72h_approaching:" + caseId, kind: "timer_72h_approaching", caseId,
+          subject: "12 hours remaining on 72-hour accident deadline: " + ref,
+          message: "The 72-hour internal accident management deadline is approaching.\n\nAccident: " + ref + "\nDriver: " + (accident.driver || "Not recorded") + "\nVehicle: " + (accident.vehicle || "Not recorded") + "\nIncident time: " + (accident.date || "") + " " + (accident.time || "") + "\nTime elapsed: " + Math.floor(ageHours) + " hours\n\nPlease check that the accident report, driver interview and management decision are completed before the 72-hour deadline."
+        });
+      }
+      if (ageHours >= 72) {
+        await sendDeadlineNotice({
+          eventKey: "timer_72h_overdue:" + caseId, kind: "timer_72h_overdue", caseId,
+          subject: "OVERDUE: 72-hour accident management deadline: " + ref,
+          message: "The 72-hour internal accident management deadline has passed and the case remains open.\n\nAccident: " + ref + "\nDriver: " + (accident.driver || "Not recorded") + "\nVehicle: " + (accident.vehicle || "Not recorded") + "\nIncident time: " + (accident.date || "") + " " + (accident.time || "") + "\nTime elapsed: " + Math.floor(ageHours) + " hours\n\nPlease review outstanding report, driver interview and management decision steps, and close the internal case when all required actions are complete."
+        });
+      }
+    }
     for (const task of (accident.tasks || [])) {
       if (!task || task.status === "Completed" || task.status === "Not required") continue;
-      const isInvestigation = task.type === "Investigation";
       const dueMs = task.dueAt ? Date.parse(task.dueAt) : NaN;
-      const incidentTime = accident.date ? Date.parse(String(accident.date) + "T" + String(accident.time || "00:00") + ":00") : NaN;
-      const ageHours = Number.isFinite(incidentTime) ? (now - incidentTime) / 3600000 : 0;
       const dueSoon = Number.isFinite(dueMs) && dueMs > now && dueMs - now <= 2 * 3600000;
       const overdue = Number.isFinite(dueMs) && dueMs <= now;
       const unacknowledged = task.status === "Pending" && dueSoon;
-      const investigation72 = isInvestigation && ageHours >= 72;
-      if (!dueSoon && !overdue && !investigation72) continue;
-      checked++;
-      const kind = overdue ? "task_overdue" : investigation72 ? "investigation_72h" : unacknowledged ? "task_unacknowledged_due_soon" : "task_due_soon";
-      const eventKey = kind + ":" + docSnap.id + ":" + task.id;
+      if (!dueSoon && !overdue) continue;
+      const kind = overdue ? "task_overdue" : unacknowledged ? "task_unacknowledged_due_soon" : "task_due_soon";
+      const eventKey = kind + ":" + caseId + ":" + task.id;
       const eventRef = db.collection("notificationEvents").doc(eventKey);
       const existing = await eventRef.get();
       if (existing.exists && existing.data().status === "sent") continue;
@@ -192,40 +240,39 @@ async function checkDeadlines(res, db) {
       const assignedTo = users.docs.map(function (d) { return d.data(); }).filter(function (u) {
         return String(u.name || "").trim().toLowerCase() === assignee.trim().toLowerCase() && u.email && u.status !== "Disabled";
       }).map(function (u) { return String(u.email).trim().toLowerCase(); });
-      // Deadline and acknowledgement warnings go to the whole accident team, plus the assignee.
       const recipients = Array.from(new Set(everyone.concat(assignedTo)));
-      const subject = overdue ? "OVERDUE accident task: " + (accident.ref || docSnap.id)
-        : investigation72 ? "72-hour investigation deadline: " + (accident.ref || docSnap.id)
-        : unacknowledged ? "ACTION REQUIRED — unacknowledged task due soon: " + (accident.ref || docSnap.id)
-        : "Accident task deadline approaching: " + (accident.ref || docSnap.id);
-      const message = "An accident management task needs attention.\n\nAccident: " + (accident.ref || docSnap.id)
+      const subject = overdue ? "OVERDUE accident task: " + ref
+        : unacknowledged ? "ACTION REQUIRED — unacknowledged task due soon: " + ref
+        : "Accident task deadline approaching: " + ref;
+      const message = "An accident management task needs attention.\n\nAccident: " + ref
         + "\nDriver: " + (accident.driver || "Not recorded")
         + "\nTask: " + (task.title || task.type || "Task")
         + "\nAssigned to: " + (assignee || "Unassigned")
         + "\nDue: " + (task.dueAt || "Not specified")
         + "\nStatus: " + (task.status || "Pending")
-        + "\nAlert: " + (overdue ? "The deadline has passed." : investigation72 ? "The investigation has reached 72 hours." : unacknowledged ? "The task is still Pending and is not acknowledged." : "The task deadline is within the next two hours.")
+        + "\nAlert: " + (overdue ? "The deadline has passed." : unacknowledged ? "The task is still Pending and is due within two hours." : "The task deadline is within the next two hours.")
         + "\nPlease update the task or close the case once all required work is complete.";
       try {
-        await logAttempt(db, eventKey, { type: kind, caseId: docSnap.id, taskId: task.id, recipients: recipients, status: "attempted" });
+        await logAttempt(db, eventKey, { type: kind, caseId, taskId: task.id, recipients, status: "attempted" });
         const providerId = await sendEmail(recipients, subject, message, eventKey);
-        await eventRef.set({ type: kind, caseId: docSnap.id, taskId: task.id, recipients: recipients, subject: subject, status: "sent", providerId: providerId, sentAt: FieldValue.serverTimestamp() }, { merge: true });
+        await eventRef.set({ type: kind, caseId, taskId: task.id, recipients, subject, status: "sent", providerId, sentAt: FieldValue.serverTimestamp() }, { merge: true });
         sent++;
       } catch (error) {
-        await eventRef.set({ type: kind, caseId: docSnap.id, taskId: task.id, recipients: recipients, status: "failed", error: String(error.message || error), failedAt: FieldValue.serverTimestamp() }, { merge: true });
+        await eventRef.set({ type: kind, caseId, taskId: task.id, recipients, status: "failed", error: String(error.message || error), failedAt: FieldValue.serverTimestamp() }, { merge: true });
         failed++;
       }
     }
   }
-  return res.status(200).json({ ok: true, checked: checked, sent: sent, failed: failed });
+  return res.status(200).json({ ok: true, checked, sent, failed });
 }
 export default async function handler(req, res) {
   try {
     const db = getFirestore(adminApp());
     if (req.method === "POST") return await notifyEvent(req, res, db);
     if (req.method === "GET") {
-      const secret = process.env.CRON_SECRET;
-      if (!secret || req.headers.authorization !== "Bearer " + secret) return res.status(401).json({ error: "Unauthorized" });
+      const supplied = req.headers.authorization || "";
+      const allowedSecrets = [process.env.CRON_SECRET, process.env.GOOGLE_MAILER_SHARED_SECRET].filter(Boolean).map(function (s) { return "Bearer " + s; });
+      if (!allowedSecrets.includes(supplied)) return res.status(401).json({ error: "Unauthorized" });
       return await checkDeadlines(res, db);
     }
     res.setHeader("Allow", "GET, POST");
