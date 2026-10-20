@@ -89,7 +89,7 @@ function setupAccidentDeadlineChecks() {
   });
 
   ScriptApp.newTrigger("runAccidentDeadlineChecks").timeBased().everyMinutes(15).create();
-  runAccidentDeadlineChecks();
+  console.log("Created 15-minute trigger. Run testAccidentDeadlineConnection before relying on automatic reminders.");
 }
 
 function runAccidentDeadlineChecks() {
@@ -108,6 +108,26 @@ function runAccidentDeadlineChecks() {
   console.log("Accident deadline check returned HTTP " + status + ": " + body);
   if (status < 200 || status >= 300) {
     throw new Error("Accident deadline check failed with HTTP " + status + ": " + body);
+  }
+  return body;
+}
+
+function testAccidentDeadlineConnection() {
+  const properties = PropertiesService.getScriptProperties();
+  const secret = properties.getProperty("CRON_SECRET") || properties.getProperty("MAILER_SHARED_SECRET") || properties.getProperty("WEBHOOK_SECRET");
+  if (!secret) throw new Error("No scheduler secret found. Check Project Settings > Script properties.");
+
+  const endpoint = (properties.getProperty("ACCIDENT_NOTIFICATIONS_URL") || "https://swans-accident-management.vercel.app/api/notifications") + "?health=1";
+  const response = UrlFetchApp.fetch(endpoint, {
+    method: "get",
+    headers: { Authorization: "Bearer " + secret },
+    muteHttpExceptions: true
+  });
+  const status = response.getResponseCode();
+  const body = response.getContentText();
+  console.log("Notification health check returned HTTP " + status + ": " + body);
+  if (status < 200 || status >= 300) {
+    throw new Error("Notification health check failed with HTTP " + status + ": " + body);
   }
   return body;
 }
