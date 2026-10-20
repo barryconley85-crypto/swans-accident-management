@@ -273,6 +273,9 @@ export default async function handler(req, res) {
       const supplied = req.headers.authorization || "";
       const allowedSecrets = [process.env.CRON_SECRET, process.env.GOOGLE_MAILER_SHARED_SECRET].filter(Boolean).map(function (s) { return "Bearer " + s; });
       if (!allowedSecrets.includes(supplied)) return res.status(401).json({ error: "Unauthorized" });
+      if (req.query && req.query.health === "1") {
+        return res.status(200).json({ ok: true, mode: "health", message: "Notification endpoint and authentication are working. No emails were sent." });
+      }
       return await checkDeadlines(res, db);
     }
     res.setHeader("Allow", "GET, POST");
