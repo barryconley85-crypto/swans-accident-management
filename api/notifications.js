@@ -103,9 +103,8 @@ async function notifyEvent(req, res, db) {
   } else if (eventType === "task_assigned") {
     const taskId = String(input.taskId || "");
     const tasks = Array.isArray(accident.tasks) ? accident.tasks : [];
-    const task = tasks.find(function (t) { return String(t.id) === taskId; });
-    if (!task) return res.status(404).json({ error: "Assigned task not found on accident case" });
-    const assignee = String(task.assignee || "").trim();
+    const task = tasks.find(function (t) { return String(t.id) === taskId; }) || { id: taskId, title: String(input.taskTitle || "Accident task"), assignee: String(input.assignee || "") };
+    const assignee = String(input.assignee || task.assignee || "").trim();
     if (!assignee || /unassigned/i.test(assignee)) return res.status(400).json({ error: "Task has no assigned person" });
     const key = assignee.toLowerCase();
     const aliases = {
@@ -114,7 +113,10 @@ async function notifyEvent(req, res, db) {
       "coral tilson": { name: "Coral Tilson", email: "clt@swanstravel.com" },
       "pww": { name: "Peter Weston", email: "pww@swanstravel.com" },
       "peter": { name: "Peter Weston", email: "pww@swanstravel.com" },
-      "peter weston": { name: "Peter Weston", email: "pww@swanstravel.com" }
+      "peter weston": { name: "Peter Weston", email: "pww@swanstravel.com" },
+      "barry": { name: "Barry Conley", email: "bc@swanstravel.com" },
+      "barry conley": { name: "Barry Conley", email: "bc@swanstravel.com" },
+      "bc@swanstravel.com": { name: "Barry Conley", email: "bc@swanstravel.com" }
     };
     let recipient = aliases[key] || null;
     if (!recipient && key.includes("@")) {
