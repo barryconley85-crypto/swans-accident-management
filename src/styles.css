@@ -168,3 +168,50 @@ a.row:hover{background:#f4faf7;padding-left:8px;padding-right:8px;border-radius:
 /* Meeting briefing clarity */
 .driver-review-card .driver-picker{display:flex;flex-direction:column;gap:7px;min-width:260px;font-weight:650}.driver-review-card .driver-picker select{min-width:260px;padding:11px;border:1px solid var(--line,#dce8e3);border-radius:10px;background:white}.driver-briefing{border:1px solid #cfe5dd;background:#f6fbf9;border-radius:14px;padding:18px;margin:18px 0 22px}.driver-briefing-title{display:flex;align-items:center;justify-content:space-between;gap:12px}.driver-briefing-title small{font-size:10px;letter-spacing:.12em;font-weight:800;color:#177568}.driver-briefing-title h3{margin:5px 0 0;font-size:24px}.briefing-chip{border-radius:999px;background:#e3f2ec;color:#155e53;padding:7px 11px;font-size:12px;font-weight:700}.briefing-summary{border-top:1px solid #d7e9e2;padding-top:13px;margin-top:8px;display:grid;gap:5px;color:#31544c}.briefing-summary>span{font-weight:650}.briefing-summary p{margin:5px 0 0}.driver-history h4 small{display:block;font-size:12px;font-weight:500;color:#71847e;margin-top:3px}.outcome-form{background:#fbfcfc;border:1px solid #dce8e3;border-radius:14px;padding:22px;margin-top:24px}.outcome-form h3{margin:6px 0}.outcome-form .field-hint{display:block;font-size:12px;font-weight:400;color:#667c75;margin:4px 0}.driver-history{gap:26px}.driver-history>div{min-width:0}
 @media(max-width:750px){.modal-actions .newbtn{display:inline-flex;}}
+
+
+/* iPhone touch responsiveness: keep fixed navigation above page layers and remove tap flashes */
+@media (max-width: 750px) {
+  html, body, #root { min-height: 100%; }
+  body { -webkit-tap-highlight-color: transparent; }
+  .app { isolation: isolate; }
+  .app header { z-index: 25; }
+  .app .mobile-nav {
+    z-index: 60 !important;
+    pointer-events: auto !important;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    touch-action: manipulation;
+    padding-bottom: calc(5px + env(safe-area-inset-bottom));
+  }
+  .app .mobile-nav-item {
+    min-height: 48px;
+    padding: 5px 2px;
+    cursor: pointer;
+    pointer-events: auto;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: none !important;
+  }
+  .app .mobile-nav-item:active,
+  .app .mobile-nav-item:hover {
+    transform: none !important;
+    background: #e4efeb;
+  }
+  .app .hamb {
+    z-index: 26 !important;
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app .newbtn,
+  .app .secondary,
+  .app button,
+  .app a {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app .mobile-nav-backdrop { touch-action: manipulation; }
+  .app aside.sidebar.open { overscroll-behavior: contain; }
+}
