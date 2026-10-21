@@ -223,3 +223,31 @@ a.row:hover{background:#f4faf7;padding-left:8px;padding-right:8px;border-radius:
   .app .mobile-nav-backdrop { touch-action: manipulation; }
   .app aside.sidebar.open { overscroll-behavior: contain; }
 }
+
+
+/* Accident review meeting: clearer visual hierarchy and decision-focused colours */
+.accident-review-page .metrics .metric:nth-child(1) { border-top: 4px solid #0f766e; background: linear-gradient(145deg,#f0fdfa,#ffffff); }
+.accident-review-page .metrics .metric:nth-child(2) { border-top: 4px solid #d97706; background: linear-gradient(145deg,#fff7ed,#ffffff); }
+.accident-review-page .metrics .metric:nth-child(3) { border-top: 4px solid #7c3aed; background: linear-gradient(145deg,#f5f3ff,#ffffff); }
+.accident-review-page .metrics .metric:nth-child(4) { border-top: 4px solid #2563eb; background: linear-gradient(145deg,#eff6ff,#ffffff); }
+.accident-review-page > .card { border-top: 3px solid #dbe7e3; }
+.accident-review-page > .card:nth-of-type(2) { border-top-color: #f59e0b; }
+.accident-review-page > .card:nth-of-type(3) { border-top-color: #0d9488; }
+.accident-review-page .section-head h3 { color: #163f38; }
+.accident-review-page .table-wrap tbody tr:nth-child(even) { background: #f8fbfa; }
+.accident-review-page .table-wrap tbody tr:hover { background: #eaf5f1; }
+.accident-review-page .text-button { color: #087f8c; font-weight: 750; }
+.accident-review-page .driver-briefing { background: linear-gradient(135deg,#effaf6 0%,#f5f7ff 100%); border-color: #b8ded3; box-shadow: 0 8px 22px rgba(15,118,110,.07); }
+.accident-review-page .briefing-chip { background: #d1fae5; color: #065f46; }
+.accident-review-page .driver-history > div:first-child { background: #f8fbff; border: 1px solid #dbeafe; border-radius: 13px; padding: 16px; }
+.accident-review-page .driver-history > div:last-child { background: #fffaf5; border: 1px solid #fed7aa; border-radius: 13px; padding: 16px; }
+.accident-review-page .driver-history > div:first-child .history-dot { background: #2563eb; box-shadow: 0 0 0 4px #dbeafe; }
+.accident-review-page .driver-history > div:last-child .history-dot { background: #d97706; box-shadow: 0 0 0 4px #ffedd5; }
+.accident-review-page .outcome-form { background: linear-gradient(135deg,#f0fdfa 0%,#ffffff 60%,#eff6ff 100%); border: 1px solid #b8ded3; box-shadow: 0 10px 26px rgba(15,118,110,.08); }
+.accident-review-page .outcome-form > .eyebrow { color: #0f766e; }
+.accident-review-page .outcome-form .newbtn { box-shadow: 0 5px 14px rgba(15,118,110,.18); }
+@media (max-width: 750px) {
+  .accident-review-page .driver-briefing-title { align-items: flex-start; flex-direction: column; }
+  .accident-review-page .driver-history > div { padding: 13px; }
+  .accident-review-page .metrics .metric { min-width: 0; }
+}
