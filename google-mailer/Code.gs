@@ -7,7 +7,7 @@
  * Set Script Property MAILER_SHARED_SECRET to the same strong random value
  * stored in Vercel as GOOGLE_MAILER_SHARED_SECRET.
  *
- * This endpoint only sends to @swanstravel.com recipients.
+ * Sends to any syntactically valid email address. Keep the shared-secret check enabled.
  */
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -21,8 +21,8 @@ function doPost(e) {
     const recipients = Array.isArray(body.to) ? body.to : [];
     if (!recipients.length || recipients.length > 20) return json({ ok: false, error: "Invalid recipients" });
     const clean = recipients.map(function (x) { return String(x).trim().toLowerCase(); });
-    if (clean.some(function (email) { return !/^[^\s@]+@swanstravel\.com$/.test(email); })) {
-      return json({ ok: false, error: "Recipients must use an approved Swans Travel email address" });
+    if (clean.some(function (email) { return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); })) {
+      return json({ ok: false, error: "One or more recipients are not valid email addresses" });
     }
     const subject = String(body.subject || "").trim().slice(0, 180);
     const message = String(body.text || "").trim().slice(0, 18000);
