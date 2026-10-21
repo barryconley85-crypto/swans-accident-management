@@ -100,6 +100,39 @@ async function notifyEvent(req, res, db) {
     to = csvEmails(process.env.FNOL_ALERT_TO || process.env.ACCIDENT_ALERT_TO);
     subject = "FNOL acknowledged: " + (accident.ref || caseId);
     message = "FNOL has been acknowledged for accident " + (accident.ref || caseId) + ".\nDriver: " + (accident.driver || "Not recorded") + "\nAcknowledged by: " + (accident.fnolAcknowledgedBy || actor.email || actor.uid) + "\nReference: " + (accident.fnolReference || "Not recorded");
+  } else if (eventType === "task_assigned") {
+    const taskId = String(input.taskId || "");
+    const tasks = Array.isArray(accident.tasks) ? accident.tasks : [];
+    const task = tasks.find(function (t) { return String(t.id) === taskId; });
+    if (!task) return res.status(404).json({ error: "Assigned task not found on accident case" });
+    const assignee = String(task.assignee || "").trim();
+    if (!assignee || /unassigned/i.test(assignee)) return res.status(400).json({ error: "Task has no assigned person" });
+    const key = assignee.toLowerCase();
+    const aliases = {
+      "clt": { name: "Coral Tilson", email: "clt@swanstravel.com" },
+      "coral": { name: "Coral Tilson", email: "clt@swanstravel.com" },
+      "coral tilson": { name: "Coral Tilson", email: "clt@swanstravel.com" },
+      "pww": { name: "Peter Weston", email: "pww@swanstravel.com" },
+      "peter": { name: "Peter Weston", email: "pww@swanstravel.com" },
+      "peter weston": { name: "Peter Weston", email: "pww@swanstravel.com" }
+    };
+    let recipient = aliases[key] || null;
+    if (!recipient && key.includes("@")) {
+      recipient = { name: assignee, email: key };
+    }
+    if (!recipient) {
+      const users = await db.collection("appUsers").get();
+      const match = users.docs.map(function (d) { return d.data(); }).find(function (u) {
+        const name = String(u.name || "").trim().toLowerCase();
+        const email = String(u.email || "").trim().toLowerCase();
+        return name === key || email === key || email.split("@")[0] === key;
+      });
+      if (match && match.email) recipient = { name: match.name || assignee, email: String(match.email).trim().toLowerCase() };
+    }
+    if (!recipient || !recipient.email) return res.status(400).json({ error: "Could not find an email address for task assignee: " + assignee });
+    to = [recipient.email];
+    subject = "Task assigned to you: " + (task.title || "Accident task") + " — " + (accident.ref || caseId);
+    message = "Hello " + recipient.name + ",\n\nA task has been assigned to you in Swans Travel Accident Management.\n\nAccident reference: " + (accident.ref || caseId) + "\nDriver: " + (accident.driver || "Not recorded") + "\nVehicle: " + (accident.vehicle || "Not recorded") + "\nIncident date: " + (accident.date || "Not recorded") + "\nTask: " + (task.title || "Accident task") + "\nAssigned by: " + (actor.email || actor.uid) + "\n\nPlease open the Accident Management app and complete the task when appropriate.";
   } else if (eventType === "driver_insurance_form") {
     const formUrl = String(process.env.INSURANCE_FORM_URL || "").trim();
     if (!formUrl || !/^https:\/\//i.test(formUrl)) return res.status(503).json({ error: "Adobe insurance form link is not configured" });
