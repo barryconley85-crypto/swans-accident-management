@@ -193,10 +193,18 @@ a.row:hover{background:#f4faf7;padding-left:8px;padding-right:8px;border-radius:
     -webkit-tap-highlight-color: transparent;
     transition: none !important;
   }
-  .app .mobile-nav-item:active,
+  .app .mobile-nav-item:active {
+    transform: none !important;
+    opacity: .82;
+  }
   .app .mobile-nav-item:hover {
     transform: none !important;
-    background: #e4efeb;
+    background: transparent;
+  }
+  .app .mobile-nav-item.active,
+  .app .mobile-nav-item.active:hover {
+    background: #e4efeb !important;
+    color: #155b57 !important;
   }
   .app .hamb {
     z-index: 26 !important;
