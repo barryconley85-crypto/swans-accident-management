@@ -1,18 +1,43 @@
-{
-  "name": "Swans Accident Management",
-  "short_name": "Swans AMS",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
-  "description": "Swans Travel accident reporting and management.",
-  "icons": [
-    {
-      "src": "/Swans%20AMS.png",
-      "sizes": "any",
-      "type": "image/png",
-      "purpose": "any"
-    }
-  ]
-}
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+
+    <meta name="theme-color" content="#ffffff" />
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="default"
+    />
+
+    <meta
+        name="apple-mobile-web-app-title"
+        content="Swans AMS"
+    />
+
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <link
+        rel="apple-touch-icon"
+        href="/Swans 20AMS.png"
+    />
+
+    <title>Swans AMS</title>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script
+        type="module"
+        src="/src/main.tsx"
+    ></script>
+</body>
+</html>
