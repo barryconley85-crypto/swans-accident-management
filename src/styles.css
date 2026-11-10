@@ -322,3 +322,24 @@ a.row:hover{background:#f4faf7;padding-left:8px;padding-right:8px;border-radius:
     line-height: 1.35 !important;
   }
 }
+
+
+/* Keep the meeting decision save action obvious and reachable above the iPhone bottom navigation */
+@media (max-width: 750px) {
+  .accident-review-page .outcome-form {
+    padding-bottom: 24px;
+    scroll-margin-bottom: 110px;
+  }
+  .accident-review-page .outcome-form > .newbtn {
+    display: flex !important;
+    position: sticky !important;
+    bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+    z-index: 35 !important;
+    width: 100% !important;
+    min-height: 52px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 18px 0 12px !important;
+    box-shadow: 0 4px 16px rgba(15, 91, 87, .24) !important;
+  }
+}
