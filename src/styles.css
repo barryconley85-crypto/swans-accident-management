@@ -275,3 +275,50 @@ a.row:hover{background:#f4faf7;padding-left:8px;padding-right:8px;border-radius:
 
 .outcome-register-section{margin:22px 0}.outcome-register-section>h3{font-size:17px;margin:0 0 12px;color:var(--ink)}.outcome-action-card{margin:12px 0;padding:18px}.outcome-action-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.outcome-action-head h3{margin:5px 0;font-size:19px}.outcome-action-head small,.outcome-completed-row small{display:block;color:var(--muted);font-size:11px}.outcome-action-head p{margin:5px 0;color:var(--muted);font-size:13px}.outcome-action-brief{padding:12px 14px;border-radius:10px;background:#f5f8f6;margin:12px 0}.outcome-action-brief p{margin:5px 0 0}.outcome-action-buttons{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 8px}.outcome-completed-row{display:grid;gap:7px;margin:10px 0;padding:15px}.outcome-completed-row p{margin:0;color:var(--muted)}.meeting-outcomes-page .metrics{margin:16px 0}
 @media(max-width:700px){.outcome-action-head{flex-direction:column}.outcome-action-buttons>*{width:100%}.outcome-action-card .form-grid{grid-template-columns:1fr}}
+
+
+/* Mobile drawer layout: keep the account/status footer below navigation, never over it */
+@media (max-width: 750px) {
+  .app aside.sidebar {
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .app aside.sidebar .brand {
+    flex: 0 0 58px;
+    min-height: 58px;
+    margin-bottom: 8px;
+  }
+  .app aside.sidebar nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 12px;
+  }
+  .app aside.sidebar .sidefoot {
+    position: static;
+    flex: 0 0 auto;
+    width: 100%;
+    margin-top: auto;
+    padding: 10px 10px 12px;
+    background: #f7f9f7;
+    border-top: 1px solid var(--line);
+  }
+  .app aside.sidebar .active-panel {
+    margin-bottom: 8px;
+  }
+  .app aside.sidebar .current-user {
+    padding: 5px 4px 8px;
+  }
+  .app aside.sidebar .logout-btn {
+    margin-bottom: 7px;
+  }
+}
