@@ -35,7 +35,7 @@ function doPost(e) {
     const suppliedHtml = String(body.html || "").trim();
     const html = (suppliedHtml || brandedHtml(subject, message)).slice(0, 40000);
     // Keep `body` populated so mail clients that disable HTML can show the message.
-    MailApp.sendEmail({ to: clean.join(","), subject: subject, body: message, htmlBody: html, name: "Swans Travel | Accident Management" });
+    MailApp.sendEmail({ to: clean.join(","), subject: subject, body: message, htmlBody: html, name: "Swans Travel" });
     const id = Utilities.getUuid();
     props.setProperty(key, id);
     return json({ ok: true, id: id });
