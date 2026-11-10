@@ -275,3 +275,50 @@ a.row:hover{background:#f4faf7;padding-left:8px;padding-right:8px;border-radius:
 
 .outcome-register-section{margin:22px 0}.outcome-register-section>h3{font-size:17px;margin:0 0 12px;color:var(--ink)}.outcome-action-card{margin:12px 0;padding:18px}.outcome-action-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.outcome-action-head h3{margin:5px 0;font-size:19px}.outcome-action-head small,.outcome-completed-row small{display:block;color:var(--muted);font-size:11px}.outcome-action-head p{margin:5px 0;color:var(--muted);font-size:13px}.outcome-action-brief{padding:12px 14px;border-radius:10px;background:#f5f8f6;margin:12px 0}.outcome-action-brief p{margin:5px 0 0}.outcome-action-buttons{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 8px}.outcome-completed-row{display:grid;gap:7px;margin:10px 0;padding:15px}.outcome-completed-row p{margin:0;color:var(--muted)}.meeting-outcomes-page .metrics{margin:16px 0}
 @media(max-width:700px){.outcome-action-head{flex-direction:column}.outcome-action-buttons>*{width:100%}.outcome-action-card .form-grid{grid-template-columns:1fr}}
+
+
+/* iPhone sidebar layout fix: keep account controls in a fixed footer, never over navigation */
+@media (max-width: 750px) {
+  .app aside.sidebar.open {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+  }
+  .app aside.sidebar.open .brand {
+    flex: 0 0 70px !important;
+  }
+  .app aside.sidebar.open nav {
+    display: block !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    padding: 4px 0 14px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .app aside.sidebar.open .sidefoot {
+    position: static !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    padding: 10px 10px calc(14px + env(safe-area-inset-bottom)) !important;
+    margin-top: auto !important;
+    background: #f7f9f7 !important;
+    border-top: 1px solid #dce8e2 !important;
+  }
+  .app aside.sidebar.open .active-panel {
+    margin-bottom: 8px !important;
+  }
+  .app aside.sidebar.open .current-user {
+    padding: 5px 4px 8px !important;
+  }
+  .app aside.sidebar.open .logout-btn {
+    margin-bottom: 8px !important;
+  }
+  .app aside.sidebar.open .system-status {
+    line-height: 1.35 !important;
+  }
+}
