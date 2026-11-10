@@ -207,11 +207,11 @@ function AccidentReviewMeeting({cases,reviews,drivers,users,currentUser,saveRevi
  const isCurrentDriver=(c:Case)=>drivers.find(d=>d.id===c.driverId||d.name.trim().toLowerCase()===c.driver.trim().toLowerCase())?.status!=='Inactive';
  const weekly=cases.filter(c=>isCurrentDriver(c)&&c.incidentKind!=='Near miss'&&!isHistoricalImport(c)&&dateOf(c)>=meetingPeriodStart&&dateOf(c)<meetingPeriodEnd).sort((a,b)=>dateOf(b).getTime()-dateOf(a).getTime());
  const olderOpen=cases.filter(c=>isCurrentDriver(c)&&c.incidentKind!=='Near miss'&&!isHistoricalImport(c)&&!hasMeetingDecision(c)&&dateOf(c)<meetingPeriodStart).sort((a,b)=>dateOf(a).getTime()-dateOf(b).getTime());
- const driverCases=(name:string,id?:string)=>cases.filter(c=>c.incidentKind!=='Near miss'&&((id&&c.driverId===id)||(!id&&c.driver.trim().toLowerCase()===name.trim().toLowerCase())||(id&&c.driver.trim().toLowerCase()===name.trim().toLowerCase()))).sort((a,b)=>dateOf(b).getTime()-dateOf(a).getTime());
+ const driverCases=(name:string,id?:string)=>cases.filter(c=>!isHistoricalImport(c)&&c.incidentKind!=='Near miss'&&((id&&c.driverId===id)||(!id&&c.driver.trim().toLowerCase()===name.trim().toLowerCase())||(id&&c.driver.trim().toLowerCase()===name.trim().toLowerCase()))).sort((a,b)=>dateOf(b).getTime()-dateOf(a).getTime());
  const driverReviews=(name:string,id?:string)=>reviews.filter(r=>(id&&r.driverId===id)||r.driver.trim().toLowerCase()===name.trim().toLowerCase()).sort((a,b)=>b.reviewedAt-a.reviewedAt);
- const driversWithOpen=Array.from(new Map(cases.filter(c=>isOpen(c)&&c.incidentKind!=='Near miss').map(c=>[c.driver.trim().toLowerCase(),{name:c.driver,id:c.driverId}])).values());
+ const driversWithOpen=Array.from(new Map(cases.filter(c=>!isHistoricalImport(c)&&isOpen(c)&&c.incidentKind!=='Near miss').map(c=>[c.driver.trim().toLowerCase(),{name:c.driver,id:c.driverId}])).values());
  const recentCount=(name:string,id?:string,days=90)=>driverCases(name,id).filter(c=>today.getTime()-dateOf(c).getTime()<=days*86400000).length;
- const allDrivers=Array.from(new Map([...cases.filter(c=>c.incidentKind!=='Near miss').map(c=>({name:c.driver,id:c.driverId})),...reviews.map(r=>({name:r.driver,id:r.driverId}))].filter(d=>d.name).map(d=>[d.name.trim().toLowerCase(),d])).values()).sort((a,b)=>a.name.localeCompare(b.name));
+ const allDrivers=Array.from(new Map([...cases.filter(c=>!isHistoricalImport(c)&&c.incidentKind!=='Near miss').map(c=>({name:c.driver,id:c.driverId})),...reviews.map(r=>({name:r.driver,id:r.driverId}))].filter(d=>d.name).map(d=>[d.name.trim().toLowerCase(),d])).values()).sort((a,b)=>a.name.localeCompare(b.name));
  const chosen=allDrivers.find(d=>d.name.trim().toLowerCase()===selectedDriver.trim().toLowerCase());
  const history=chosen?driverCases(chosen.name,chosen.id):[];
  const timeline=chosen?driverReviews(chosen.name,chosen.id):[];
