@@ -50,6 +50,7 @@ async function authenticate(req, app) {
 
 export default async function handler(req, res) {
   const allowedOrigins = new Set([
+    "https://swans-accident-management.vercel.app",
     "https://swans-accident-management-ob3s.vercel.app",
     "https://swans-accident-management-barry-s-projects22.vercel.app",
     "https://swans-accident-management-git-main-barry-s-projects22.vercel.app"
