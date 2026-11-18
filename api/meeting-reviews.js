@@ -60,12 +60,12 @@ export default async function handler(req, res) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
     res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   }
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.setHeader("Pragma", "no-cache");
   if (req.method === "OPTIONS") return res.status(204).end();
-  if (req.method !== "GET" && req.method !== "POST") {
+  if (req.method !== "GET" && req.method !== "POST" && req.method !== "DELETE") {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
@@ -80,6 +80,21 @@ export default async function handler(req, res) {
         ok: true,
         reviews: snapshot.docs.map(item => ({ ...item.data(), id: item.id }))
       });
+    }
+
+    if (req.method === "DELETE") {
+      const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      const id = typeof body?.id === "string" ? body.id : "";
+      if (!/^review-[A-Za-z0-9-]{10,100}$/.test(id)) {
+        return res.status(400).json({ ok: false, error: "Invalid meeting outcome reference." });
+      }
+      const record = db.collection("meetingReviews").doc(id);
+      const existing = await record.get();
+      if (!existing.exists) return res.status(404).json({ ok: false, error: "This meeting outcome no longer exists." });
+      await record.delete();
+      const verification = await record.get();
+      if (verification.exists) throw new Error("The database could not confirm deletion of this meeting outcome.");
+      return res.status(200).json({ ok: true, deletedId: id, verified: true });
     }
 
     const review = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
