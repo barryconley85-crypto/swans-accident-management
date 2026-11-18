@@ -49,8 +49,21 @@ async function authenticate(req, app) {
 }
 
 export default async function handler(req, res) {
+  const allowedOrigins = new Set([
+    "https://swans-accident-management-ob3s.vercel.app",
+    "https://swans-accident-management-barry-s-projects22.vercel.app",
+    "https://swans-accident-management-git-main-barry-s-projects22.vercel.app"
+  ]);
+  const origin = req.headers.origin || "";
+  if (allowedOrigins.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  }
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   res.setHeader("Pragma", "no-cache");
+  if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "GET" && req.method !== "POST") {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
