@@ -64,8 +64,7 @@ const historicalSeedRows=[
 ["161","2026-10-15","Adam Rossitor","YT21LFU","Near miss","Collision following distance / observation","Vehicle","Fault",0,"Original tracker entry 161; retained as historical closed record"]
 ] as const;
 const historicalSeed:Case[]=historicalSeedRows.map(([refNo,date,driver,vehicle,desc,behaviour,objectStruck,fault,cost,note])=>{
- const normalizedBehaviour=behaviour==='Low speed manoeuvring non-reversing'?'Low speed manoeuvring':behaviour==='Collision following distance or observation'?'Collision following distance / observation':behaviour==='Collision manoeuvre judgemnt'?'Collision manoeuvre judgement':behaviour==='Other non behavioural'?'Other':behaviour;
- const behaviourValue=BEHAVIOURS.includes(normalizedBehaviour as string)?normalizedBehaviour as string:'Other';
+ const behaviourValue=BEHAVIOURS.includes(behaviour as string)?behaviour as string:'Other';
  const objectValue=OBJECTS.includes(objectStruck as string)?objectStruck as string:'Other';
  const typeValue=behaviourValue==='Wing mirror strike'?'Mirror strike':behaviourValue==='Reversing'?'Reversing scrape':behaviourValue==='Collision following distance / observation'?'Collision':behaviourValue==='Low speed manoeuvring'?'Yard / obstacle contact':behaviourValue==='Side body contact'||behaviourValue==='Tail swing'?'Other bodywork scrape':'Other';
  const caseId='historical-2026-'+refNo;
@@ -84,7 +83,7 @@ const trackerHistoricalRows=[["1","2025-09-19","","YT23HXS","HIT POST","Reversin
 const trackerHistoricalSeed:Case[]=trackerHistoricalRows.map(([trackerId,date,driver,vehicle,desc,behaviour,objectStruck,fault,cost,outcome,interviewNotes])=>{
  const caseId='tracker-historical-'+trackerId;
  const completedAt=date+'T12:00:00';
- const normalizedBehaviour=behaviour==='Low speed manoeuvring non-reversing'?'Low speed manoeuvring':behaviour==='Collision following distance or observation'?'Collision following distance / observation':behaviour==='Collision manoeuvre judgemnt'?'Collision manoeuvre judgement':behaviour==='Other non behavioural'?'Other':behaviour;
+ const normalizedBehaviour=behaviour==='Low speed manoeuvring non-reversing'?'Low speed manoeuvring':behaviour==='Collision following distance or observation'?'Collision following distance / observation':behaviour==='Other non behavioural'?'Other':behaviour;
  const behaviourValue=BEHAVIOURS.includes(normalizedBehaviour as string)?normalizedBehaviour as string:'Other';
  const objectValue=OBJECTS.includes(objectStruck as string)?objectStruck as string:'Other';
  const typeValue=behaviourValue==='Wing mirror strike'?'Mirror strike':behaviourValue==='Reversing'?'Reversing scrape':behaviourValue==='Collision following distance or observation'||behaviourValue==='Collision manoeuvre judgement'||behaviourValue==='Collision junction judgement'?'Collision':behaviourValue==='Low speed manoeuvring'||behaviourValue==='Low speed manoeuvring non-reversing'?'Yard / obstacle contact':behaviourValue==='Side body contact'||behaviourValue==='Tail swing'?'Other bodywork scrape':behaviourValue==='Window strike'?'Smashed window':'Other';
