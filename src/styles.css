@@ -406,3 +406,11 @@ a.row:hover{background:#f4faf7;padding-left:8px;padding-right:8px;border-radius:
 .investigation-summary-edit textarea,.investigation-summary-edit input,.investigation-summary-edit select{width:100%;font:inherit;font-weight:400;padding:10px;border:1px solid #d5e0d9;border-radius:8px;background:white}
 .investigation-summary-edit textarea{min-height:90px}
 @media(max-width:700px){.investigation-history-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.investigation-history-row{flex-direction:column;gap:6px}}
+
+.cctv-link-panel{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin:16px 0;padding:16px;border:1px solid #d7e7df;border-radius:12px;background:#f7fbf8}
+.cctv-link-panel>div:first-child{display:grid;gap:6px;min-width:220px;flex:1}
+.cctv-link-panel>div:first-child b{display:flex;align-items:center;gap:8px;color:#174d40;font-size:14px}
+.cctv-link-panel>div:first-child small{font-size:12px;line-height:1.5;color:#687b72}
+.cctv-link-entry{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;min-width:min(100%,320px)}
+.cctv-link-entry input{flex:1;min-width:200px;border:1px solid #cbdcd3;border-radius:8px;padding:10px 12px;background:#fff;font:inherit;font-size:13px}
+.cctv-link-entry a{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:12px}
