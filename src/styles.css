@@ -343,3 +343,35 @@ a.row:hover{background:#f4faf7;padding-left:8px;padding-right:8px;border-radius:
     box-shadow: 0 4px 16px rgba(15, 91, 87, .24) !important;
   }
 }
+
+/* Driver review meeting: make liability the first, clearest decision signal. */
+.liability-summary{margin:18px 0 16px;padding:18px;border:1px solid #dce9e3;border-radius:16px;background:#fff;box-shadow:0 5px 18px rgba(31,72,57,.045)}
+.liability-summary-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.liability-summary-heading>div{display:grid;gap:4px}
+.liability-summary-heading>div>b{font-size:17px;color:#203b34}
+.liability-summary-heading>div>small{font-size:11px;color:#73827b}
+.liability-summary-heading>strong{font-size:25px;line-height:1.05;color:#203b34;text-align:right;white-space:nowrap}
+.liability-summary-heading>strong small{display:block;font-size:10px;font-weight:650;color:#718079;margin-top:4px}
+.liability-count-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.liability-count{min-width:0;min-height:108px;padding:13px 14px;border-radius:12px;background:#f5f7f6;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px}
+.liability-count>strong{font-size:32px;line-height:1;font-weight:800}
+.liability-count>b{font-size:13px;color:#203b34}
+.liability-count>small{font-size:10px;line-height:1.35;color:#718079}
+.liability-count.at-fault>strong{color:#a52b27}
+.liability-count.non-fault>strong{color:#08753b}
+.liability-count.shared-fault>strong{color:#9a620e}
+.liability-count.undetermined>strong{color:#52616a}
+.liability-bar{display:flex;gap:3px;height:11px;overflow:hidden;border-radius:99px;background:#edf1ef;margin-top:14px}
+.liability-bar>span{min-width:3px;border-radius:99px}
+.liability-bar-at-fault{background:#d9534f}
+.liability-bar-non-fault{background:#159b62}
+.liability-bar-shared{background:#e39a28}
+.liability-bar-undetermined{background:#87939b}
+.meeting-investigation-glance{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:9px 0 12px;padding:10px 12px;border-left:3px solid #319b89;border-radius:0 9px 9px 0;background:#f4f8f6;color:#53675e;font-size:11px;line-height:1.5}
+.meeting-investigation-glance span{margin-left:8px}
+.meeting-case-details{margin:12px 0;border:1px solid #e3ece7;border-radius:11px;background:#fbfdfc}
+.meeting-case-details>summary{padding:11px 13px;color:#315c50;font-size:11px;font-weight:800;cursor:pointer;list-style-position:inside}
+.meeting-case-details[open]>summary{border-bottom:1px solid #e3ece7;background:#f5faf7}
+.meeting-case-details>.meeting-case-facts,.meeting-case-details>.meeting-case-investigation,.meeting-case-details>.meeting-case-actions{margin:12px}
+@media(max-width:900px){.liability-count-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.liability-summary{padding:13px}.liability-count{min-height:94px;padding:11px}.liability-count>strong{font-size:27px}.liability-summary-heading>div>b{font-size:15px}.liability-summary-heading>div>small{max-width:220px}.meeting-investigation-glance span{display:block;margin:4px 0 0}}
