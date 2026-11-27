@@ -116,7 +116,10 @@ async function notifyEvent(req, res, db) {
       "peter weston": { name: "Peter Weston", email: "pww@swanstravel.com" },
       "barry": { name: "Barry Conley", email: "bc@swanstravel.com" },
       "barry conley": { name: "Barry Conley", email: "bc@swanstravel.com" },
-      "bc@swanstravel.com": { name: "Barry Conley", email: "bc@swanstravel.com" }
+      "bc@swanstravel.com": { name: "Barry Conley", email: "bc@swanstravel.com" },
+      "stephen horlock": { name: "Stephen Horlock", email: "swh@swanstravel.com" },
+      "swh": { name: "Stephen Horlock", email: "swh@swanstravel.com" },
+      "swh@swanstravel.com": { name: "Stephen Horlock", email: "swh@swanstravel.com" }
     };
     let recipient = aliases[key] || null;
     if (!recipient && key.includes("@")) {
@@ -177,11 +180,29 @@ async function notifyEvent(req, res, db) {
     if (!task) return res.status(404).json({ error: "Assigned task not found" });
     const assignee = String(task.assignee || "");
     if (!assignee || /unassigned/i.test(assignee)) return res.status(200).json({ ok: true, skipped: "Task is unassigned" });
-    const users = await db.collection("appUsers").get();
-    const matched = users.docs.map(function (d) { return d.data(); }).filter(function (u) {
-      return String(u.name || "").trim().toLowerCase() === assignee.trim().toLowerCase() && u.email;
-    });
-    to = matched.map(function (u) { return u.email; });
+    const assigneeKey = assignee.trim().toLowerCase().replace(/\s+/g, " ");
+    const knownRecipients = {
+      "stephen horlock": "swh@swanstravel.com",
+      "swh": "swh@swanstravel.com",
+      "swh@swanstravel.com": "swh@swanstravel.com",
+      "coral tilson": "clt@swanstravel.com",
+      "clt": "clt@swanstravel.com",
+      "peter weston": "pww@swanstravel.com",
+      "pww": "pww@swanstravel.com",
+      "barry conley": "bc@swanstravel.com",
+      "barry": "bc@swanstravel.com"
+    };
+    if (knownRecipients[assigneeKey]) {
+      to = [knownRecipients[assigneeKey]];
+    } else {
+      const users = await db.collection("appUsers").get();
+      const matched = users.docs.map(function (d) { return ({ id: d.id, ...d.data() }); }).find(function (u) {
+        const candidates = [u.name, u.displayName, u.fullName, u.email, u.id]
+          .map(function (v) { return String(v || "").trim().toLowerCase().replace(/\s+/g, " "); });
+        return candidates.includes(assigneeKey) && u.email;
+      });
+      if (matched && matched.email) to = [String(matched.email).trim().toLowerCase()];
+    }
     if (!to.length && /insurance|claims/i.test(assignee)) to = csvEmails(process.env.FNOL_ALERT_TO);
     if (!to.length) to = csvEmails(process.env.ACCIDENT_ALERT_TO);
     subject = "Accident task assigned to " + assignee + ": " + (accident.ref || caseId);
