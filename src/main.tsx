@@ -256,13 +256,13 @@ function InvestigationsPage({cases,save,users}:{cases:Case[];save:(x:Case[])=>vo
 const open=cases.filter(c=>c.status==='Investigation'||!!c.investigation);
 const [recordFilter,setRecordFilter]=useState<'Pending'|'Completed'|'All'>(()=>new URLSearchParams(window.location.search).get('case')?'Completed':'Pending');
 const [recordSearch,setRecordSearch]=useState('');
-const completedRecord=!!c?.investigation?.completedAt;
 const visibleRecords=open.filter(x=>{const done=!!x.investigation?.completedAt;const matchesStatus=recordFilter==='All'||(recordFilter==='Completed'?done:!done);const q=recordSearch.trim().toLowerCase();const matchesSearch=!q||[x.driver,x.vehicle,x.ref,x.location].some(v=>String(v||'').toLowerCase().includes(q));return matchesStatus&&matchesSearch;});
 const[active,setActive]=useState<string|null>(()=>new URLSearchParams(window.location.search).get('case')||open[0]?.id||null);
 const[step,setStep]=useState(0);
 const[saving,setSaving]=useState(false);
 const[savedAt,setSavedAt]=useState('');const[historyFilter,setHistoryFilter]=useState<string|null>(null);const[editingSummary,setEditingSummary]=useState(false);const[summaryDraft,setSummaryDraft]=useState({desc:'',location:'',depot:'',type:'',severity:'Medium' as Sev,fault:''});
 const c=open.find(x=>x.id===active);
+const completedRecord=!!c?.investigation?.completedAt;
 const driverCutoff=new Date();driverCutoff.setFullYear(driverCutoff.getFullYear()-1);const driverHistory=cases.filter(x=>x.driver.trim().toLowerCase()===(c?.driver||'').trim().toLowerCase()&&x.incidentKind!=='Near miss'&&new Date((x.date||'')+'T00:00:00')>=driverCutoff);const liabilityCounts={fault:driverHistory.filter(x=>['Fault','At fault'].includes(x.fault)).length,nonFault:driverHistory.filter(x=>['Non Fault','Non-fault'].includes(x.fault)).length,shared:driverHistory.filter(x=>['50/50','Shared'].includes(x.fault)).length,undetermined:driverHistory.filter(x=>!['Fault','At fault','Non Fault','Non-fault','50/50','Shared'].includes(x.fault)).length};
 const blank:Investigation={driverStatement:'',whatHappened:'',driverExplanation:'',witnesses:'',cctv:'Not reviewed',telematics:'Not reviewed',thirdParty:'',faultAssessment:'',previousRelevant:'',findings:'',recommendedAction:'',managerRecommendation:'',recommendedLiability:'Pending',driverCouldDoDifferently:'',driverSuggestedLiability:'Not sure',lastEyeTest:'',eyeTestWillingness:'Not discussed',nextActionTeam:'Operations / Compliance'};
 const[form,setForm]=useState<Investigation>(c?.investigation||blank);
